@@ -1,0 +1,68 @@
+import { Request, Response } from 'express';
+import { db } from '../../src/lib/database';
+import { Product } from '../../src/types';
+
+export const getAllProducts = (req: Request, res: Response) => {
+  try {
+    const products = db.products.getAll();
+    res.json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({ message: 'Error al obtener los productos' });
+  }
+};
+
+export const getProductById = (req: Request, res: Response) => {
+  try {
+    const product = db.products.getById(req.params.id);
+    if (product) {
+      res.json(product);
+    } else {
+      res.status(404).json({ message: 'Producto no encontrado' });
+    }
+  } catch (error) {
+    console.error("Error fetching product by id:", error);
+    res.status(500).json({ message: 'Error al obtener el producto' });
+  }
+};
+
+export const createProduct = (req: Request, res: Response) => {
+    try {
+        const newProductData = req.body as Omit<Product, 'id'>;
+        const createdProductId = db.products.create(newProductData);
+        const createdProduct = db.products.getById(createdProductId);
+        res.status(201).json(createdProduct);
+    } catch (error) {
+        console.error("Error creating product:", error);
+        res.status(500).json({ message: 'Error al crear el producto' });
+    }
+};
+
+export const updateProduct = (req: Request, res: Response) => {
+    try {
+        const updated = db.products.update(req.params.id, req.body);
+        if (updated) {
+            const updatedProduct = db.products.getById(req.params.id);
+            res.json(updatedProduct);
+        } else {
+            res.status(404).json({ message: 'Producto no encontrado para actualizar' });
+        }
+    } catch (error) {
+        console.error("Error updating product:", error);
+        res.status(500).json({ message: 'Error al actualizar el producto' });
+    }
+};
+
+export const deleteProduct = (req: Request, res: Response) => {
+    try {
+        const deleted = db.products.delete(req.params.id);
+        if (deleted) {
+            res.status(204).send();
+        } else {
+            res.status(404).json({ message: 'Producto no encontrado para eliminar' });
+        }
+    } catch (error) {
+        console.error("Error deleting product:", error);
+        res.status(500).json({ message: 'Error al eliminar el producto' });
+    }
+};

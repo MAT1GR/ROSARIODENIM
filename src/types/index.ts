@@ -25,6 +25,8 @@ export interface Customer {
   email: string;
   name: string;
   phone?: string;
+  order_count?: number; // <-- AÑADIR ESTA LÍNEA
+  total_spent?: number; // <-- AÑADIR ESTA LÍNEA
 }
 
 export interface Order {
@@ -32,7 +34,7 @@ export interface Order {
   customer: Customer;
   items: CartItem[];
   total: number;
-  status: 'pending' | 'paid' | 'shipped' | 'delivered';
+  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
   createdAt: Date;
 }
 
