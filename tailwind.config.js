@@ -3,20 +3,19 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
-      // Paleta de colores inspirada en la referencia
+      // Paleta de colores extraída de la nueva captura
       colors: {
-        'brand-pink': '#D8A7B1', // Mantenemos el rosa para acentos clave
-        'brand-primary': '#111111', // Negro para texto principal
-        'brand-secondary': '#666666', // Gris para texto secundario
-        'brand-accent': '#A79C9A', // El color topo/rosa pálido de los botones
-        'brand-accent-hover': '#968b89',
-        'brand-light': '#F5F5F5', // Gris muy claro para fondos y bordes
+        'brand-primary-text': '#5a5a5a',    // Para títulos y precios
+        'brand-secondary-text': '#a8a8a8', // Para breadcrumbs y texto secundario
+        'brand-button-bg': '#c4b7b5',      // Fondo de botones activos
+        'brand-button-bg-hover': '#b8a9a7',// Hover para los botones
+        'brand-border': '#d1d1d1',        // Bordes de elementos inactivos
+        'brand-pink': '#D8A7B1',           // Mantenemos el rosa para el botón "Comprar"
+        'brand-light': '#F5F5F5',
         'brand-bg': '#FFFFFF',
-        'brand-outline': '#E5E5E5',
       },
       fontFamily: {
-        // Fuente limpia y moderna para toda la interfaz
-        'inter': ['Inter', 'sans-serif'],
+        'roboto': ['Roboto', 'sans-serif'],
       },
     },
   },
