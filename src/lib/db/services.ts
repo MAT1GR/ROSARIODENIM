@@ -198,8 +198,9 @@ export const dashboardService = {
         const productCount = (dbConnection.prepare('SELECT COUNT(*) as count FROM products WHERE is_active = 1').get() as {count: number}).count;
         const orderCount = (dbConnection.prepare('SELECT COUNT(*) as count FROM orders').get() as {count: number}).count;
         const customerCount = (dbConnection.prepare('SELECT COUNT(*) as count FROM customers').get() as {count: number}).count;
-        // CORRECCIÓN: Se maneja el caso en que `total` sea `null`
-        const totalRevenueResult = dbConnection.prepare('SELECT SUM(total) as total FROM orders WHERE status = "delivered"').get() as {total: number | null};
+        
+        // CORRECCIÓN: Se envuelve 'delivered' en comillas simples para que sea un string literal en SQL.
+        const totalRevenueResult = dbConnection.prepare("SELECT SUM(total) as total FROM orders WHERE status = 'delivered'").get() as {total: number | null};
         const totalRevenue = totalRevenueResult.total || 0;
 
         return {
