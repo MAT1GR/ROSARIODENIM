@@ -17,7 +17,8 @@ export const ProductsTab: React.FC = () => {
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/products');
+      // CORRECCIÓN: Apunta a la nueva ruta para admin
+      const res = await fetch('/api/products/all');
       if (!res.ok) throw new Error('Failed to fetch');
       setProducts(await res.json());
     } catch (err) {
@@ -41,7 +42,7 @@ export const ProductsTab: React.FC = () => {
       });
       if (!response.ok) throw new Error('Error al guardar el producto');
       
-      await fetchProducts(); // Recarga la lista de productos
+      await fetchProducts();
       handleCloseForm();
       alert(`Producto ${editingProduct ? 'actualizado' : 'creado'} con éxito.`);
     } catch (error) {
@@ -53,12 +54,12 @@ export const ProductsTab: React.FC = () => {
   };
 
   const handleDeleteProduct = async (productId: string) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este producto? Esta acción es irreversible.')) return;
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este producto?')) return;
     try {
       const response = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Error al eliminar');
       
-      await fetchProducts(); // Recarga la lista
+      await fetchProducts();
       alert('Producto eliminado con éxito.');
     } catch (err) {
       console.error(err);
@@ -89,17 +90,15 @@ export const ProductsTab: React.FC = () => {
         <table className="w-full min-w-[600px]">
           <thead className="bg-gray-50">
             <tr>
-              <th className="text-left p-4 font-medium text-sm text-gray-600 uppercase tracking-wider">Producto</th>
-              <th className="text-left p-4 font-medium text-sm text-gray-600 uppercase tracking-wider">Precio</th>
-              <th className="text-left p-4 font-medium text-sm text-gray-600 uppercase tracking-wider">Stock</th>
-              <th className="text-left p-4 font-medium text-sm text-gray-600 uppercase tracking-wider">Acciones</th>
+              <th className="p-4 text-left font-medium text-sm text-gray-600">Producto</th>
+              <th className="p-4 text-left font-medium text-sm text-gray-600">Precio</th>
+              <th className="p-4 text-left font-medium text-sm text-gray-600">Stock</th>
+              <th className="p-4 text-left font-medium text-sm text-gray-600">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {isLoading ? (
-              <tr><td colSpan={4} className="text-center p-8 text-gray-500">Cargando productos...</td></tr>
-            ) : products.length === 0 ? (
-              <tr><td colSpan={4} className="text-center p-8 text-gray-500">No hay productos para mostrar.</td></tr>
+              <tr><td colSpan={4} className="p-8 text-center text-gray-500">Cargando...</td></tr>
             ) : products.map((product) => {
               const totalStock = Object.values(product.sizes).reduce((acc, size) => acc + (size.stock || 0), 0);
               return (
@@ -112,8 +111,8 @@ export const ProductsTab: React.FC = () => {
                   <td className="p-4 text-gray-700">{totalStock} unidades</td>
                   <td className="p-4">
                     <div className="flex gap-2">
-                      <button onClick={() => handleOpenForm(product)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"><Edit size={16} /></button>
-                      <button onClick={() => handleDeleteProduct(product.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"><Trash2 size={16} /></button>
+                      <button onClick={() => handleOpenForm(product)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Edit size={16} /></button>
+                      <button onClick={() => handleDeleteProduct(product.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 size={16} /></button>
                     </div>
                   </td>
                 </tr>

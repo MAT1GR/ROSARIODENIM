@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { db } from '../../src/lib/database';
 import { Product } from '../../src/types';
 
-// ... (getAllProducts, getProductById, etc. se mantienen igual)
 export const getAllProducts = (req: Request, res: Response) => {
   try {
     const filters = {
@@ -19,7 +18,17 @@ export const getAllProducts = (req: Request, res: Response) => {
   }
 };
 
-// --- NUEVAS FUNCIONES ---
+// --- NUEVA FUNCIÓN ---
+export const getAllAdminProducts = (req: Request, res: Response) => {
+    try {
+        const products = db.products.getAllAdmin();
+        res.json(products);
+    } catch (error) {
+        console.error("Error fetching admin products:", error);
+        res.status(500).json({ message: 'Error al obtener los productos para admin' });
+    }
+};
+
 export const getNewProducts = (req: Request, res: Response) => {
     try {
         const products = db.products.getNewest();
@@ -39,7 +48,6 @@ export const getBestsellerProducts = (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error al obtener los productos más vendidos' });
     }
 };
-// --- FIN NUEVAS FUNCIONES ---
 
 export const getProductById = (req: Request, res: Response) => {
   try {

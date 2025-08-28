@@ -66,32 +66,25 @@ export const authService = {
 
 // --- Product Services ---
 export const productService = {
+  // Para la tienda pública (con filtros y paginación)
   getAll: (filters: { category?: string; sortBy?: string; page?: number; limit?: number }) => {
     const { category, sortBy, page = 1, limit = 9 } = filters;
-    
     let whereClauses: string[] = ['is_active = 1'];
     let params: (string | number)[] = [];
-    
     if (category) {
       whereClauses.push('category = ?');
       params.push(category);
     }
-
     const where = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-    let orderBy = 'ORDER BY id DESC'; // Novedades por defecto
+    let orderBy = 'ORDER BY id DESC';
     if (sortBy === 'price-asc') orderBy = 'ORDER BY price ASC';
     if (sortBy === 'price-desc') orderBy = 'ORDER BY price DESC';
     if (sortBy === 'popular') orderBy = 'ORDER BY is_best_seller DESC, id DESC';
-
     const offset = (page - 1) * limit;
-
     const productsQuery = `SELECT * FROM products ${where} ${orderBy} LIMIT ? OFFSET ?`;
     const countQuery = `SELECT COUNT(*) as total FROM products ${where}`;
-
     const products = dbConnection.prepare(productsQuery).all(...params, limit, offset).map(parseProduct);
     const totalResult = dbConnection.prepare(countQuery).get(...params) as { total: number };
-    
     return {
       products,
       totalPages: Math.ceil(totalResult.total / limit),
@@ -99,24 +92,20 @@ export const productService = {
       totalProducts: totalResult.total,
     };
   },
+
+  // Para el panel de administración (todos los productos, sin filtros)
+  getAllAdmin: (): Product[] => {
+    const rows = dbConnection.prepare('SELECT * FROM products WHERE is_active = 1 ORDER BY id DESC').all();
+    return rows.map(parseProduct);
+  },
   
   getNewest: (limit: number = 3): Product[] => {
-    const rows = dbConnection.prepare(`
-        SELECT * FROM products 
-        WHERE is_active = 1 AND is_new = 1 
-        ORDER BY id DESC 
-        LIMIT ?
-    `).all(limit);
+    const rows = dbConnection.prepare(`SELECT * FROM products WHERE is_active = 1 AND is_new = 1 ORDER BY id DESC LIMIT ?`).all(limit);
     return rows.map(parseProduct);
   },
 
   getBestsellers: (limit: number = 3): Product[] => {
-    const rows = dbConnection.prepare(`
-        SELECT * FROM products 
-        WHERE is_active = 1 AND is_best_seller = 1 
-        ORDER BY id DESC 
-        LIMIT ?
-    `).all(limit);
+    const rows = dbConnection.prepare(`SELECT * FROM products WHERE is_active = 1 AND is_best_seller = 1 ORDER BY id DESC LIMIT ?`).all(limit);
     return rows.map(parseProduct);
   },
 
@@ -161,7 +150,7 @@ export const productService = {
   }
 };
 
-// --- Category Services ---
+// ... (resto de los servicios se mantienen igual)
 export const categoryService = {
     getAll: (): Category[] => {
         const rows = dbConnection.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC').all();
@@ -201,9 +190,17 @@ export const categoryService = {
         return result.changes > 0;
     }
 };
-
-// --- Order Services ---
 export const orderService = {
+    create: (order: Omit<Order, 'id' | 'createdAt' | 'customer'>): number => {
+        const result = dbConnection.prepare(`
+            INSERT INTO orders (customer_name, customer_email, items, total, status)
+            VALUES (@customer_name, @customer_email, @items, @total, @status)
+        `).run({
+            ...order,
+            items: JSON.stringify(order.items),
+        });
+        return result.lastInsertRowid as number;
+    },
     getAll: (): Order[] => {
         const rows = dbConnection.prepare('SELECT * FROM orders ORDER BY created_at DESC').all();
         return rows.map(parseOrder);
@@ -213,16 +210,12 @@ export const orderService = {
         return result.changes > 0;
     }
 };
-
-// --- Customer Services ---
 export const customerService = {
     getAll: (): Customer[] => {
         const rows = dbConnection.prepare('SELECT * FROM customers ORDER BY created_at DESC').all();
         return rows.map(parseCustomer);
     }
 };
-
-// --- Settings Services ---
 export const settingsService = {
     getAll: (): SiteSettings => {
         const rows = dbConnection.prepare('SELECT key, value FROM site_settings').all() as {key: string, value: string}[];
@@ -241,8 +234,6 @@ export const settingsService = {
         transaction(settings);
     }
 };
-
-// --- Dashboard Services ---
 export const dashboardService = {
     getStats: () => {
         const productCount = (dbConnection.prepare('SELECT COUNT(*) as count FROM products WHERE is_active = 1').get() as {count: number}).count;

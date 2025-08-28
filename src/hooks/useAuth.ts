@@ -19,20 +19,18 @@ export const useAuth = () => {
   return context;
 };
 
+// CORRECCIÓN: Añade 'export' aquí
 export const useAuthProvider = () => {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored auth token
-    const token = localStorage.getItem('admin_token');
     const userData = localStorage.getItem('admin_user');
     
-    if (token && userData) {
+    if (userData) {
       try {
         setUser(JSON.parse(userData));
       } catch (error) {
-        localStorage.removeItem('admin_token');
         localStorage.removeItem('admin_user');
       }
     }
@@ -42,21 +40,18 @@ export const useAuthProvider = () => {
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      // In a real app, this would be an API call
-      // For now, we'll simulate the authentication
-      if (username === 'admin' && password === 'admin123') {
-        const mockUser: AdminUser = {
-          id: 1,
-          username: 'admin',
-          password: '',
-          email: 'admin@rosariodenim.com',
-          role: 'super_admin',
-          created_at: new Date()
-        };
-        
-        setUser(mockUser);
-        localStorage.setItem('admin_token', 'mock_token_' + Date.now());
-        localStorage.setItem('admin_user', JSON.stringify(mockUser));
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (response.ok) {
+        const { user: loggedInUser } = await response.json();
+        setUser(loggedInUser);
+        localStorage.setItem('admin_user', JSON.stringify(loggedInUser));
         return true;
       }
       return false;
@@ -68,7 +63,6 @@ export const useAuthProvider = () => {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
   };
 

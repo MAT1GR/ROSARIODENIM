@@ -10,8 +10,9 @@ import ProductPage from './pages/ProductPage';
 import CartPage from './pages/CartPage';
 import SizeGuidePage from './pages/SizeGuidePage';
 import AdminPage from './pages/AdminPage';
-import CheckoutPage from './pages/CheckoutPage'; // <-- AÑADIR
-import PaymentSuccessPage from './pages/PaymentSuccessPage'; // <-- AÑADIR
+import CheckoutPage from './pages/CheckoutPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   const auth = useAuthProvider();
@@ -20,9 +21,10 @@ function App() {
     <AuthContext.Provider value={auth}>
       <CartProvider>
         <Router>
+          <ScrollToTop />
           <div className="min-h-screen flex flex-col">
             <Header />
-            <main className="flex-1">
+            <main className="flex-1 fade-in">
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/tienda" element={<ShopPage />} />
@@ -30,8 +32,8 @@ function App() {
                 <Route path="/carrito" element={<CartPage />} />
                 <Route path="/tallas" element={<SizeGuidePage />} />
                 <Route path="/admin" element={<AdminPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} /> {/* <-- AÑADIR */}
-                <Route path="/payment-success" element={<PaymentSuccessPage />} /> {/* <-- AÑADIR */}
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/payment-success" element={<PaymentSuccessPage />} />
               </Routes>
             </main>
             <Footer />

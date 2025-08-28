@@ -7,17 +7,16 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const availableSizes = Object.keys(product.sizes).filter(size => product.sizes[size].available);
-  const lowestStock = Math.min(...Object.values(product.sizes).map(s => s.stock));
-
   return (
     <Link to={`/producto/${product.id}`} className="group block">
-      <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+      {/* Usamos la nueva clase 'card-hover' para la transición de la sombra */}
+      <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl card-hover">
         <div className="aspect-[3/4] relative overflow-hidden">
           <img
             src={product.images[0]}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            // La transición del 'transform' se aplica con las clases de Tailwind
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-in-out"
             loading="lazy"
           />
           {product.isNew && (
@@ -33,20 +32,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
         
         <div className="p-4">
-          <h3 className="font-medium text-gray-900 mb-1 group-hover:text-[#D8A7B1] transition-colors">
+          {/* La transición de color en el título la maneja la regla global de 'a' */}
+          <h3 className="font-medium text-gray-900 mb-1 group-hover:text-[#D8A7B1]">
             {product.name}
           </h3>
-          <p className="text-xl font-bold text-gray-900 mb-2">
+          <p className="text-xl font-bold text-gray-900">
             ${product.price.toLocaleString('es-AR')}
           </p>
-          <p className="text-sm text-gray-600 mb-2">
-            Talles disponibles: {availableSizes.join(', ')}
-          </p>
-          {lowestStock <= 3 && lowestStock > 0 && (
-            <p className="text-xs text-red-600 font-medium">
-              ¡Últimas {lowestStock} unidades!
-            </p>
-          )}
         </div>
       </div>
     </Link>

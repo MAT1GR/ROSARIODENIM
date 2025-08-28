@@ -1,75 +1,88 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, User, Menu } from 'lucide-react';
-import { useCart } from '../hooks/useCart';
+import { ShoppingBag, Menu, X } from 'lucide-react';
+import { useCart } from '../hooks/useCart.tsx';
 
 const Header: React.FC = () => {
   const location = useLocation();
   const { getTotalItems } = useCart();
   const totalItems = getTotalItems();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
+
+  const navLinks = [
+    { href: '/', label: 'Inicio' },
+    { href: '/tienda', label: 'Tienda' },
+    { href: '/tallas', label: 'Guía de Tallas' },
+  ];
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="text-2xl font-bold text-gray-900">
-            Rosario Denim
-          </Link>
-
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link
-              to="/"
-              className={`text-sm font-medium transition-colors hover:text-[#D8A7B1] ${
-                location.pathname === '/' ? 'text-[#D8A7B1]' : 'text-gray-700'
-              }`}
-            >
-              Inicio
-            </Link>
-            <Link
-              to="/tienda"
-              className={`text-sm font-medium transition-colors hover:text-[#D8A7B1] ${
-                location.pathname === '/tienda' ? 'text-[#D8A7B1]' : 'text-gray-700'
-              }`}
-            >
-              Tienda
-            </Link>
-            <Link
-              to="/tallas"
-              className={`text-sm font-medium transition-colors hover:text-[#D8A7B1] ${
-                location.pathname === '/tallas' ? 'text-[#D8A7B1]' : 'text-gray-700'
-              }`}
-            >
-              Guía de Tallas
-            </Link>
-          </nav>
-
-          <div className="flex items-center space-x-4">
-            <Link
-              to="/carrito"
-              className="relative p-2 text-gray-700 hover:text-[#D8A7B1] transition-colors"
-            >
-              <ShoppingBag size={24} />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#D8A7B1] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {totalItems}
-                </span>
-              )}
-            </Link>
-            
-            <Link
-              to="/admin"
-              className="hidden md:block p-2 text-gray-700 hover:text-[#D8A7B1] transition-colors"
-            >
-              <User size={24} />
+    <>
+      <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-lg shadow-sm' : 'bg-transparent'}`}>
+        <div className="container mx-auto px-4 py-5">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="text-2xl font-extrabold text-brand-dark tracking-tighter">
+              Rosario<span className="text-brand-pink">.</span>
             </Link>
 
-            <button className="md:hidden p-2 text-gray-700">
-              <Menu size={24} />
-            </button>
+            <nav className="hidden md:flex items-center space-x-10">
+              {navLinks.map(link => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className={`text-base font-medium text-brand-gray hover:text-brand-dark relative after:content-[''] after:absolute after:w-full after:h-[2px] after:bottom-[-4px] after:left-0 after:bg-brand-pink after:transition-transform after:duration-300 ${
+                    location.pathname === link.href ? 'text-brand-dark after:scale-x-100' : 'after:scale-x-0 hover:after:scale-x-50'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="flex items-center space-x-4">
+              <Link to="/carrito" className="relative p-2 text-brand-gray hover:text-brand-dark">
+                <ShoppingBag size={22} />
+                {totalItems > 0 && (
+                  <span className="absolute top-0 right-0 bg-brand-pink text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
+                    {totalItems}
+                  </span>
+                )}
+              </Link>
+              
+              <button className="md:hidden p-2 text-brand-gray" onClick={() => setIsMenuOpen(true)}>
+                <Menu size={22} />
+              </button>
+            </div>
           </div>
         </div>
+      </header>
+      
+      {/* Menú Móvil */}
+      <div className={`fixed inset-0 bg-black/40 z-50 transition-opacity duration-300 md:hidden ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsMenuOpen(false)}>
+        <div className={`absolute top-0 right-0 h-full w-3/4 max-w-xs bg-white shadow-xl p-6 transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`} onClick={e => e.stopPropagation()}>
+          <div className="flex justify-end items-center mb-12">
+            <button onClick={() => setIsMenuOpen(false)} className="p-2"><X/></button>
+          </div>
+          <nav className="flex flex-col space-y-8">
+            {navLinks.map(link => (
+              <Link key={link.href} to={link.href} className={`text-2xl font-bold ${location.pathname === link.href ? 'text-brand-pink' : 'text-brand-dark'}`}>
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
       </div>
-    </header>
+    </>
   );
 };
 

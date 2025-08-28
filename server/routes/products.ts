@@ -5,15 +5,17 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  getNewProducts,       // <-- AÑADIR
-  getBestsellerProducts // <-- AÑADIR
+  getNewProducts,
+  getBestsellerProducts,
+  getAllAdminProducts // <-- AÑADIR
 } from '../controllers/productController';
 
 const router = Router();
 
 router.get('/', getAllProducts);
-router.get('/newest', getNewProducts);           // <-- AÑADIR
-router.get('/bestsellers', getBestsellerProducts); // <-- AÑADIR
+router.get('/all', getAllAdminProducts); // <-- AÑADIR
+router.get('/newest', getNewProducts);
+router.get('/bestsellers', getBestsellerProducts);
 router.get('/:id', getProductById);
 router.post('/', createProduct);
 router.put('/:id', updateProduct);
