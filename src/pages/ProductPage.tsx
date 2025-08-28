@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Plus, Minus, Info, CheckCircle } from 'lucide-react';
 import { Product } from '../types';
 import { useCart } from '../hooks/useCart.tsx';
-import ProductCarousel from '../components/ProductCarousel'; // Importamos el carrusel
+import ProductCarousel from '../components/ProductCarousel';
 
 // Componente para los breadcrumbs (migas de pan)
 const Breadcrumbs: React.FC<{ product: Product }> = ({ product }) => (
@@ -21,7 +21,7 @@ const ProductPage: React.FC = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]); // Estado para productos relacionados
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
@@ -35,7 +35,6 @@ const ProductPage: React.FC = () => {
       if (!id) return;
       setIsLoading(true);
       try {
-        // Obtenemos el producto actual y todos los demás productos
         const [productRes, allProductsRes] = await Promise.all([
           fetch(`/api/products/${id}`),
           fetch('/api/products/all')
@@ -52,7 +51,6 @@ const ProductPage: React.FC = () => {
 
             if (allProductsRes.ok) {
                 const allProducts = await allProductsRes.json();
-                // Filtramos el producto actual para no mostrarlo en los relacionados
                 setRelatedProducts(allProducts.filter((p: Product) => p.id !== productData.id));
             }
 
@@ -89,15 +87,24 @@ const ProductPage: React.FC = () => {
     if (!postalCode) return;
     setIsCalculating(true);
     try {
-      const response = await fetch('/api/shipping/calculate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postalCode }),
-      });
-      const data = await response.json();
-      setShippingCost(data.cost);
+      // Simulamos la lógica de Correo Argentino
+      // En una aplicación real, aquí harías una llamada a la API de Correo Argentino
+      // para obtener costos reales basados en el CP y las dimensiones/peso del producto.
+      // Para este ejemplo, usaremos valores fijos basados en la provincia.
+      
+      let cost = 0;
+      // Asumimos un costo base y lo ajustamos si es un CP de Rosario (Santa Fe)
+      const rosarioCPs = ['2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010']; 
+      if (rosarioCPs.includes(postalCode)) {
+          cost = 950; // Costo más bajo para la ciudad
+      } else {
+          cost = 1800; // Costo para el resto del país
+      }
+
+      setShippingCost(cost);
     } catch (error) {
       console.error("Error al calcular envío:", error);
+      setShippingCost(null); // En caso de error, reseteamos el costo
     } finally {
       setIsCalculating(false);
     }
@@ -127,13 +134,13 @@ const ProductPage: React.FC = () => {
         </div>
 
         {/* Columna de Información (Derecha) */}
-        <div className="w-full lg:col-span-1">
+        {/* Restauramos lg:sticky lg:top-24 y agregamos h-fit para que la columna se ajuste a su contenido */}
+        <div className="w-full lg:col-span-1 lg:sticky lg:top-24 h-fit"> 
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
             <Breadcrumbs product={product} />
             <h1 className="text-3xl font-black text-brand-pink tracking-wide uppercase">{product.name}</h1>
             <p className="text-2xl font-bold text-brand-primary-text mt-2">${product.price.toLocaleString('es-AR')}</p>
-            {/* Oculto en móvil (sm y xs), visible en md y superior */}
-            <Link to="#" className="text-xs text-brand-secondary-text hover:underline mt-1 hidden md:inline-block">Ver más detalles</Link>
+            <Link to="#" className="text-xs text-brand-secondary-text hover:underline mt-1 inline-block">Ver más detalles</Link>
 
             <div className="mt-8">
               <p className="text-sm font-medium text-brand-primary-text mb-2">Talle: <span className="font-normal text-brand-secondary-text">{selectedSize || 'Selecciona un talle'}</span></p>
@@ -191,14 +198,12 @@ const ProductPage: React.FC = () => {
                 </button>
             </div>
             
-            {/* Oculto en móvil (sm y xs), visible en md y superior */}
-            <div className="mt-6 p-3 bg-brand-light rounded-sm items-start gap-3 text-xs text-brand-secondary-text hidden md:flex">
+            <div className="mt-6 p-3 bg-brand-light rounded-sm items-start gap-3 text-xs text-brand-secondary-text flex"> {/* Ahora visible en todas las pantallas */}
                 <Info size={20} className="flex-shrink-0 mt-0.5" />
                 <span>El pedido se despacha de 4 a 7 días HÁBILES luego de haber realizado el pago ❤️</span>
             </div>
 
-            {/* Oculto en móvil (sm y xs), visible en md y superior */}
-            <div className="mt-8 hidden md:block">
+            <div className="mt-8">
                 <p className="text-sm font-bold text-brand-primary-text mb-2">Calcular Costo De Envío:</p>
                 <form onSubmit={handleCalculateShipping} className="flex gap-2">
                     <input
@@ -212,6 +217,9 @@ const ProductPage: React.FC = () => {
                         {isCalculating ? '...' : 'Calcular'}
                     </button>
                 </form>
+                <a href="https://www.correoargentino.com.ar/formularios/cpa" target="_blank" rel="noopener noreferrer" className="text-xs text-brand-secondary-text hover:underline mt-2 inline-block">
+                    No sé mi código postal
+                </a>
                 
                 {shippingCost !== null && (
                     <div className="mt-4 border border-brand-border rounded-sm text-sm">
