@@ -1,165 +1,91 @@
-import React, { useState, useMemo } from 'react';
-import { Filter } from 'lucide-react';
-import { products } from '../data/products';
+import React, { useState, useEffect } from 'react';
+import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
 
 type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'popular';
 
 const ShopPage: React.FC = () => {
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 25000]);
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
-  const categories = Array.from(new Set(products.map(p => p.category)));
-  const sizes = Array.from(new Set(products.flatMap(p => Object.keys(p.sizes))));
-  
-  const filteredAndSortedProducts = useMemo(() => {
-    let filtered = products.filter(product => {
-      // Category filter
-      if (selectedCategories.length > 0 && !selectedCategories.includes(product.category)) {
-        return false;
-      }
-      
-      // Size filter
-      if (selectedSizes.length > 0) {
-        const hasSize = selectedSizes.some(size => product.sizes[size]?.available);
-        if (!hasSize) return false;
-      }
-      
-      // Price filter
-      if (product.price < priceRange[0] || product.price > priceRange[1]) {
-        return false;
-      }
-      
-      return true;
-    });
-    
-    // Sort
-    switch (sortBy) {
-      case 'price-asc':
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-desc':
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case 'popular':
-        filtered.sort((a, b) => Number(b.isBestSeller) - Number(a.isBestSeller));
-        break;
-      case 'newest':
-      default:
-        filtered.sort((a, b) => Number(b.isNew) - Number(a.isNew));
-    }
-    
-    return filtered;
-  }, [selectedCategories, selectedSizes, priceRange, sortBy]);
+  // Estado unificado para todos los filtros
+  const [filters, setFilters] = useState({
+    category: '',
+    sortBy: 'newest' as SortOption,
+    page: 1,
+  });
 
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
+  // Este efecto se ejecuta cada vez que 'filters' cambia
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      const params = new URLSearchParams({
+        page: String(filters.page),
+        sortBy: filters.sortBy,
+      });
+      if (filters.category) {
+        params.append('category', filters.category);
+      }
+
+      try {
+        const response = await fetch(`/api/products?${params.toString()}`);
+        const data = await response.json();
+        setProducts(data.products);
+        setTotalPages(data.totalPages);
+        setTotalProducts(data.totalProducts);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProducts();
+  }, [filters]);
+
+  const handleFilterChange = (key: keyof typeof filters, value: string | number) => {
+    setFilters(prev => ({ ...prev, [key]: value, page: 1 })); // Resetea a la página 1 en cualquier cambio de filtro
   };
 
-  const handleSizeChange = (size: string) => {
-    setSelectedSizes(prev =>
-      prev.includes(size)
-        ? prev.filter(s => s !== size)
-        : [...prev, size]
-    );
-  };
+  // Asumimos que las categorías vienen de una API o están predefinidas
+  const categories = ['Mom Jeans', 'Wide Leg', 'Flare', 'Straight'];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
-          <div className="lg:w-1/4">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="flex items-center justify-between mb-6 lg:mb-4">
+          <aside className="lg:w-1/4">
+            <div className="bg-white p-6 rounded-lg shadow-sm sticky top-28">
+              <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold">Filtros</h2>
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="lg:hidden p-2 text-gray-600"
-                >
-                  <Filter size={20} />
-                </button>
+                <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden p-2 text-gray-600"><Filter size={20} /></button>
               </div>
-
               <div className={`space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
                 {/* Category Filter */}
                 <div>
                   <h3 className="font-medium mb-3">ESTILO</h3>
                   <div className="space-y-2">
+                    <button onClick={() => handleFilterChange('category', '')} className={`w-full text-left text-sm p-2 rounded ${!filters.category ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'}`}>Todos</button>
                     {categories.map(category => (
-                      <label key={category} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedCategories.includes(category)}
-                          onChange={() => handleCategoryChange(category)}
-                          className="mr-3 rounded border-gray-300 text-[#D8A7B1] focus:ring-[#D8A7B1]"
-                        />
-                        <span className="text-sm">{category}</span>
-                      </label>
+                      <button key={category} onClick={() => handleFilterChange('category', category)} className={`w-full text-left text-sm p-2 rounded ${filters.category === category ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'}`}>{category}</button>
                     ))}
-                  </div>
-                </div>
-
-                {/* Size Filter */}
-                <div>
-                  <h3 className="font-medium mb-3">TALLE</h3>
-                  <div className="grid grid-cols-4 gap-2">
-                    {sizes.sort().map(size => (
-                      <button
-                        key={size}
-                        onClick={() => handleSizeChange(size)}
-                        className={`p-2 text-sm border rounded transition-colors ${
-                          selectedSizes.includes(size)
-                            ? 'border-[#D8A7B1] bg-[#D8A7B1] text-white'
-                            : 'border-gray-300 text-gray-700 hover:border-[#D8A7B1]'
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Price Range */}
-                <div>
-                  <h3 className="font-medium mb-3">RANGO DE PRECIO</h3>
-                  <div className="space-y-2">
-                    <input
-                      type="range"
-                      min="0"
-                      max="25000"
-                      step="500"
-                      value={priceRange[1]}
-                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                      className="w-full accent-[#D8A7B1]"
-                    />
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>${priceRange[0].toLocaleString()}</span>
-                      <span>${priceRange[1].toLocaleString()}</span>
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </aside>
 
           {/* Products Grid */}
-          <div className="lg:w-3/4">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">
-                Tienda ({filteredAndSortedProducts.length} productos)
-              </h1>
-              
+          <main className="lg:w-3/4">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+              <h1 className="text-2xl font-bold">Tienda ({totalProducts} productos)</h1>
               <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                value={filters.sortBy}
+                onChange={(e) => handleFilterChange('sortBy', e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#D8A7B1]"
               >
                 <option value="newest">Novedades</option>
@@ -169,23 +95,42 @@ const ShopPage: React.FC = () => {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-              {filteredAndSortedProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-
-            {filteredAndSortedProducts.length === 0 && (
-              <div className="text-center py-16">
-                <p className="text-xl text-gray-600 mb-4">No se encontraron productos</p>
-                <p className="text-gray-500">Intenta ajustar los filtros</p>
-              </div>
+            {isLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    {Array.from({ length: 9 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+            ) : products.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    {products.map(product => <ProductCard key={product.id} product={product} />)}
+                </div>
+            ) : (
+                <div className="text-center py-16"><p className="text-xl text-gray-600">No se encontraron productos con esos filtros.</p></div>
             )}
-          </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center mt-12 gap-4">
+                    <button onClick={() => handleFilterChange('page', filters.page - 1)} disabled={filters.page <= 1} className="p-2 disabled:opacity-50"><ChevronLeft/></button>
+                    <span className="text-sm font-medium">Página {filters.page} de {totalPages}</span>
+                    <button onClick={() => handleFilterChange('page', filters.page + 1)} disabled={filters.page >= totalPages} className="p-2 disabled:opacity-50"><ChevronRight/></button>
+                </div>
+            )}
+          </main>
         </div>
       </div>
     </div>
   );
 };
+
+// Componente de esqueleto para el estado de carga
+const SkeletonCard = () => (
+    <div className="bg-white rounded-lg overflow-hidden shadow-sm animate-pulse">
+        <div className="aspect-[3/4] bg-gray-200"></div>
+        <div className="p-4">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+            <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+        </div>
+    </div>
+);
 
 export default ShopPage;

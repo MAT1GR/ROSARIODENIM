@@ -1,17 +1,66 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Minus } from 'lucide-react';
-import { products } from '../data/products';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom'; // <-- AÑADIR useNavigate
+import { ArrowLeft, Plus, Minus, CheckCircle, ShoppingBag } from 'lucide-react';
+import { Product } from '../types';
 import { useCart } from '../hooks/useCart';
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate(); // <-- Hook para la redirección
   const { addToCart } = useCart();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [addedToCart, setAddedToCart] = useState(false);
 
-  const product = products.find(p => p.id === id);
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/products/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProduct(data);
+        } else {
+          setProduct(null);
+        }
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        setProduct(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  const handleAddToCart = () => {
+    if (product && selectedSize && isInStock) {
+      addToCart(product, selectedSize, quantity);
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 2000);
+    }
+  };
+
+  // --- NUEVA FUNCIÓN ---
+  const handleBuyNow = () => {
+    if (product && selectedSize && isInStock) {
+      addToCart(product, selectedSize, quantity);
+      navigate('/carrito'); // Redirige al carrito
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl text-gray-600">Cargando producto...</p>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -29,13 +78,6 @@ const ProductPage: React.FC = () => {
   const selectedSizeInfo = selectedSize ? product.sizes[selectedSize] : null;
   const isInStock = selectedSizeInfo?.available && selectedSizeInfo?.stock > 0;
 
-  const handleAddToCart = () => {
-    if (selectedSize && isInStock) {
-      addToCart(product, selectedSize, quantity);
-      alert(`¡Agregado al carrito! ${product.name} talle ${selectedSize}`);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-white py-8">
       <div className="container mx-auto px-4 max-w-6xl">
@@ -49,7 +91,7 @@ const ProductPage: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Image Gallery */}
-          <div className="space-y-4">
+          <div className="space-y-4 sticky top-28 self-start">
             <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden">
               <img
                 src={product.images[selectedImageIndex]}
@@ -79,11 +121,11 @@ const ProductPage: React.FC = () => {
           {/* Product Info */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
               <p className="text-3xl font-bold text-gray-900">${product.price.toLocaleString('es-AR')}</p>
             </div>
 
-            <div className="prose prose-gray">
+            <div className="prose prose-gray max-w-none">
               <p>{product.description}</p>
             </div>
 
@@ -91,11 +133,8 @@ const ProductPage: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-medium">Talle</h3>
-                <Link
-                  to="/tallas"
-                  className="text-sm text-[#D8A7B1] hover:underline"
-                >
-                  ¿No sabes tu talle? Mide tu jean perfecto con nuestra guía
+                <Link to="/tallas" className="text-sm text-[#D8A7B1] hover:underline">
+                  Guía de tallas
                 </Link>
               </div>
               <div className="grid grid-cols-4 gap-3">
@@ -104,11 +143,11 @@ const ProductPage: React.FC = () => {
                     key={size}
                     onClick={() => setSelectedSize(size)}
                     disabled={!info.available}
-                    className={`py-3 px-4 text-center border rounded-lg transition-colors ${
+                    className={`py-3 px-4 text-center border rounded-lg transition-all duration-200 ${
                       !info.available
-                        ? 'border-gray-200 text-gray-400 line-through cursor-not-allowed'
+                        ? 'border-gray-200 text-gray-400 line-through cursor-not-allowed bg-gray-50'
                         : selectedSize === size
-                        ? 'border-[#D8A7B1] bg-[#D8A7B1] text-white'
+                        ? 'border-[#D8A7B1] bg-[#D8A7B1] text-white ring-2 ring-offset-1 ring-[#D8A7B1]'
                         : 'border-gray-300 text-gray-700 hover:border-[#D8A7B1]'
                     }`}
                   >
@@ -130,19 +169,19 @@ const ProductPage: React.FC = () => {
                 <div className="flex items-center border rounded-lg">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="p-2 text-gray-600 hover:text-[#D8A7B1] transition-colors"
+                    className="p-3 text-gray-600 hover:text-[#D8A7B1] transition-colors"
                   >
                     <Minus size={16} />
                   </button>
-                  <span className="px-4 py-2 border-x">{quantity}</span>
+                  <span className="px-4 py-2 border-x w-16 text-center">{quantity}</span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="p-2 text-gray-600 hover:text-[#D8A7B1] transition-colors"
+                    className="p-3 text-gray-600 hover:text-[#D8A7B1] transition-colors"
                   >
                     <Plus size={16} />
                   </button>
                 </div>
-                {selectedSizeInfo && selectedSizeInfo.stock <= 3 && (
+                {selectedSizeInfo && selectedSizeInfo.stock <= 5 && selectedSizeInfo.stock > 0 && (
                   <p className="text-sm text-red-600 font-medium">
                     ¡Últimas {selectedSizeInfo.stock} unidades!
                   </p>
@@ -150,24 +189,46 @@ const ProductPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Add to Cart Button */}
-            <button
-              onClick={handleAddToCart}
-              disabled={!selectedSize || !isInStock}
-              className={`w-full py-4 text-lg font-medium rounded-lg transition-colors ${
-                selectedSize && isInStock
-                  ? 'bg-[#D8A7B1] hover:bg-[#c69ba5] text-white'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              {!selectedSize ? 'SELECCIONA UN TALLE' : !isInStock ? 'AGOTADO' : 'AÑADIR AL CARRITO'}
-            </button>
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-4">
+                <button
+                    onClick={handleAddToCart}
+                    disabled={!selectedSize || !isInStock || addedToCart}
+                    className={`w-full py-3 text-md font-medium rounded-lg transition-all duration-300 flex items-center justify-center border ${
+                        addedToCart 
+                        ? 'bg-green-500 text-white border-green-500'
+                        : (selectedSize && isInStock)
+                        ? 'bg-white text-[#D8A7B1] border-[#D8A7B1] hover:bg-gray-50'
+                        : 'bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed'
+                    }`}
+                >
+                    {addedToCart ? (
+                    <>
+                        <CheckCircle className="mr-2" size={20} /> ¡Agregado!
+                    </>
+                    ) : (
+                    'Añadir al Carrito'
+                    )}
+                </button>
+                <button
+                    onClick={handleBuyNow}
+                    disabled={!selectedSize || !isInStock}
+                    className={`w-full py-3 text-md font-medium rounded-lg transition-colors flex items-center justify-center ${
+                        (selectedSize && isInStock)
+                        ? 'bg-[#D8A7B1] hover:bg-[#c69ba5] text-white'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                >
+                  <ShoppingBag className="mr-2" size={20} />
+                  { !selectedSize ? 'Selecciona un talle' : !isInStock ? 'Agotado' : 'Comprar Ahora' }
+                </button>
+            </div>
 
             {/* Product Details */}
             <div className="space-y-4 pt-6 border-t">
               <div>
                 <h4 className="font-medium mb-2">Detalles del Producto</h4>
-                <ul className="text-sm text-gray-600 space-y-1">
+                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
                   <li><strong>Material:</strong> {product.material}</li>
                   <li><strong>Tiro:</strong> {product.rise}</li>
                   <li><strong>Calce:</strong> {product.fit}</li>

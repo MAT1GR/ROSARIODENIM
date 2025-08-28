@@ -4,12 +4,16 @@ import {
   getProductById,
   createProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  getNewProducts,       // <-- AÑADIR
+  getBestsellerProducts // <-- AÑADIR
 } from '../controllers/productController';
 
 const router = Router();
 
 router.get('/', getAllProducts);
+router.get('/newest', getNewProducts);           // <-- AÑADIR
+router.get('/bestsellers', getBestsellerProducts); // <-- AÑADIR
 router.get('/:id', getProductById);
 router.post('/', createProduct);
 router.put('/:id', updateProduct);

@@ -1,16 +1,38 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { CartItem, Product } from '../types';
 
-export const useCart = () => {
+// 1. Definimos la "forma" (interfaz) de nuestro contexto del carrito
+interface CartContextType {
+  cartItems: CartItem[];
+  addToCart: (product: Product, size: string, quantity?: number) => void;
+  removeFromCart: (productId: string, size: string) => void;
+  updateQuantity: (productId: string, size: string, quantity: number) => void;
+  clearCart: () => void;
+  getTotalPrice: () => number;
+  getTotalItems: () => number;
+}
+
+// 2. Creamos el Contexto, especificando su tipo correctamente.
+const CartContext = createContext<CartContextType | undefined>(undefined);
+
+// 3. Creamos un componente "Proveedor" que gestionará el estado del carrito
+export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
+  // Cargar el carrito desde localStorage solo una vez, cuando el componente se monta
   useEffect(() => {
-    const savedCart = localStorage.getItem('rosario-cart');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
+    try {
+      const savedCart = localStorage.getItem('rosario-cart');
+      if (savedCart) {
+        setCartItems(JSON.parse(savedCart));
+      }
+    } catch (error) {
+      console.error("Error al cargar el carrito desde localStorage:", error);
+      setCartItems([]);
     }
   }, []);
 
+  // Guardar el carrito en localStorage cada vez que el estado 'cartItems' cambie
   useEffect(() => {
     localStorage.setItem('rosario-cart', JSON.stringify(cartItems));
   }, [cartItems]);
@@ -58,8 +80,8 @@ export const useCart = () => {
   const getTotalItems = () => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
-
-  return {
+  
+  const value: CartContextType = {
     cartItems,
     addToCart,
     removeFromCart,
@@ -68,4 +90,19 @@ export const useCart = () => {
     getTotalPrice,
     getTotalItems
   };
+
+  return (
+    <CartContext.Provider value={value}>
+        {children}
+    </CartContext.Provider>
+  );
+};
+
+// 4. Creamos el hook `useCart` que los componentes usarán para acceder al carrito
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error('useCart debe ser usado dentro de un CartProvider');
+  }
+  return context;
 };

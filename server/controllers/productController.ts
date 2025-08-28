@@ -2,15 +2,44 @@ import { Request, Response } from 'express';
 import { db } from '../../src/lib/database';
 import { Product } from '../../src/types';
 
+// ... (getAllProducts, getProductById, etc. se mantienen igual)
 export const getAllProducts = (req: Request, res: Response) => {
   try {
-    const products = db.products.getAll();
-    res.json(products);
+    const filters = {
+      category: req.query.category as string | undefined,
+      sortBy: req.query.sortBy as string | undefined,
+      page: Number(req.query.page) || 1,
+      limit: Number(req.query.limit) || 9,
+    };
+    const result = db.products.getAll(filters);
+    res.json(result);
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ message: 'Error al obtener los productos' });
   }
 };
+
+// --- NUEVAS FUNCIONES ---
+export const getNewProducts = (req: Request, res: Response) => {
+    try {
+        const products = db.products.getNewest();
+        res.json(products);
+    } catch (error) {
+        console.error("Error fetching new products:", error);
+        res.status(500).json({ message: 'Error al obtener los productos nuevos' });
+    }
+};
+
+export const getBestsellerProducts = (req: Request, res: Response) => {
+    try {
+        const products = db.products.getBestsellers();
+        res.json(products);
+    } catch (error) {
+        console.error("Error fetching bestseller products:", error);
+        res.status(500).json({ message: 'Error al obtener los productos más vendidos' });
+    }
+};
+// --- FIN NUEVAS FUNCIONES ---
 
 export const getProductById = (req: Request, res: Response) => {
   try {

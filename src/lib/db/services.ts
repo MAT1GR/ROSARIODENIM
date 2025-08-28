@@ -66,10 +66,60 @@ export const authService = {
 
 // --- Product Services ---
 export const productService = {
-  getAll: (): Product[] => {
-    const rows = dbConnection.prepare('SELECT * FROM products WHERE is_active = 1 ORDER BY id DESC').all();
+  getAll: (filters: { category?: string; sortBy?: string; page?: number; limit?: number }) => {
+    const { category, sortBy, page = 1, limit = 9 } = filters;
+    
+    let whereClauses: string[] = ['is_active = 1'];
+    let params: (string | number)[] = [];
+    
+    if (category) {
+      whereClauses.push('category = ?');
+      params.push(category);
+    }
+
+    const where = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    let orderBy = 'ORDER BY id DESC'; // Novedades por defecto
+    if (sortBy === 'price-asc') orderBy = 'ORDER BY price ASC';
+    if (sortBy === 'price-desc') orderBy = 'ORDER BY price DESC';
+    if (sortBy === 'popular') orderBy = 'ORDER BY is_best_seller DESC, id DESC';
+
+    const offset = (page - 1) * limit;
+
+    const productsQuery = `SELECT * FROM products ${where} ${orderBy} LIMIT ? OFFSET ?`;
+    const countQuery = `SELECT COUNT(*) as total FROM products ${where}`;
+
+    const products = dbConnection.prepare(productsQuery).all(...params, limit, offset).map(parseProduct);
+    const totalResult = dbConnection.prepare(countQuery).get(...params) as { total: number };
+    
+    return {
+      products,
+      totalPages: Math.ceil(totalResult.total / limit),
+      currentPage: page,
+      totalProducts: totalResult.total,
+    };
+  },
+  
+  getNewest: (limit: number = 3): Product[] => {
+    const rows = dbConnection.prepare(`
+        SELECT * FROM products 
+        WHERE is_active = 1 AND is_new = 1 
+        ORDER BY id DESC 
+        LIMIT ?
+    `).all(limit);
     return rows.map(parseProduct);
   },
+
+  getBestsellers: (limit: number = 3): Product[] => {
+    const rows = dbConnection.prepare(`
+        SELECT * FROM products 
+        WHERE is_active = 1 AND is_best_seller = 1 
+        ORDER BY id DESC 
+        LIMIT ?
+    `).all(limit);
+    return rows.map(parseProduct);
+  },
+
   getById: (id: string | number): Product | null => {
     const row = dbConnection.prepare('SELECT * FROM products WHERE id = ? AND is_active = 1').get(id);
     return row ? parseProduct(row) : null;
@@ -198,8 +248,6 @@ export const dashboardService = {
         const productCount = (dbConnection.prepare('SELECT COUNT(*) as count FROM products WHERE is_active = 1').get() as {count: number}).count;
         const orderCount = (dbConnection.prepare('SELECT COUNT(*) as count FROM orders').get() as {count: number}).count;
         const customerCount = (dbConnection.prepare('SELECT COUNT(*) as count FROM customers').get() as {count: number}).count;
-        
-        // CORRECCIÓN: Se envuelve 'delivered' en comillas simples para que sea un string literal en SQL.
         const totalRevenueResult = dbConnection.prepare("SELECT SUM(total) as total FROM orders WHERE status = 'delivered'").get() as {total: number | null};
         const totalRevenue = totalRevenueResult.total || 0;
 

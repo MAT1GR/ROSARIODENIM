@@ -1,20 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Truck, Award, Ruler, ChevronLeft, ChevronRight } from 'lucide-react';
-import { products, testimonials } from '../data/products';
+import { Product, Testimonial } from '../types'; // Mantenemos Testimonial si aún viene de un archivo estático
 import ProductCard from '../components/ProductCard';
 import TestimonialCard from '../components/TestimonialCard';
+import { testimonials } from '../data/products'; // Asumimos que los testimonios siguen siendo estáticos por ahora
 
 const HomePage: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [newProducts, setNewProducts] = useState<Product[]>([]);
+  const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
-  const newProducts = products.filter(p => p.isNew);
-  const bestSellers = products.filter(p => p.isBestSeller);
+  useEffect(() => {
+    // Cargar productos de "Novedades"
+    fetch('/api/products/newest')
+      .then(res => res.json())
+      .then(setNewProducts)
+      .catch(err => console.error("Error fetching new products:", err));
+
+    // Cargar productos "Más Vendidos"
+    fetch('/api/products/bestsellers')
+      .then(res => res.json())
+      .then(setBestSellers)
+      .catch(err => console.error("Error fetching bestsellers:", err));
+  }, []);
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle email subscription
     alert(`¡Gracias! Te enviamos un 10% OFF a ${email}`);
     setEmail('');
   };

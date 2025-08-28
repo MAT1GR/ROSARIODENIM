@@ -1,3 +1,4 @@
+import 'dotenv/config'; // <-- AÑADIR ESTA LÍNEA AL PRINCIPIO DE TODO
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth';
@@ -7,7 +8,12 @@ import orderRoutes from './routes/orders';
 import customerRoutes from './routes/customers';
 import settingsRoutes from './routes/settings';
 import dashboardRoutes from './routes/dashboard';
+import shippingRoutes from './routes/shipping';
+import paymentRoutes from './routes/payments';
 
+// --- VERIFICACIÓN CRUCIAL ---
+console.log("Verificando Access Token cargado:", process.env.MERCADOPAGO_ACCESS_TOKEN);
+// -------------------------
 
 const app = express();
 app.use(cors());
@@ -23,6 +29,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/shipping', shippingRoutes);
+app.use('/api/payments', paymentRoutes);
 
 
 app.listen(PORT, () => {
