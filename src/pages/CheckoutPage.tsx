@@ -36,13 +36,12 @@ const CheckoutPage: React.FC = () => {
             
             setIsLoading(false);
             
-            const mp = new window.MercadoPago('TEST-650397ea-9d94-49d8-bde3-680adb9058f0', {
+            const mp = new window.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY, {
                 locale: 'es-AR'
             });
 
             const bricksBuilder = mp.bricks();
 
-            // CORRECCIÓN: Guardamos la instancia del Brick en la referencia
             cardPaymentBrickController.current = await bricksBuilder.create("cardPayment", "cardPaymentBrick_container", {
                 initialization: {
                     amount: getTotalPrice(),
@@ -53,8 +52,28 @@ const CheckoutPage: React.FC = () => {
                 },
                 callbacks: {
                     onReady: () => { /* El Brick está listo */ },
-                    onSubmit: (cardFormData: any) => {
-                        console.log("Enviando formulario de tarjeta:", cardFormData);
+                    onSubmit: async (cardFormData: any) => {
+                        try {
+                            const response = await fetch('/api/payments/process-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(cardFormData),
+                            });
+
+                            const paymentResult = await response.json();
+
+                            if (!response.ok) {
+                                throw new Error(paymentResult.message || 'Error en el pago');
+                            }
+                            
+                            // --- ¡ESTA ES LA LÍNEA CLAVE! ---
+                            // Si todo salió bien, redirigimos a la página de éxito.
+                            navigate('/payment-success');
+
+                        } catch (error) {
+                            console.error("Error al procesar el pago:", error);
+                            alert("Hubo un error al procesar tu pago. Por favor, revisa los datos e intenta de nuevo.");
+                        }
                     },
                     onError: (error: any) => {
                         console.error("Error en el Brick de pago:", error);
@@ -75,7 +94,6 @@ const CheckoutPage: React.FC = () => {
 
         return () => {
             isMounted = false;
-            // CORRECCIÓN: Desmontamos la instancia del Brick para evitar duplicados
             if (cardPaymentBrickController.current) {
                 cardPaymentBrickController.current.unmount();
             }
