@@ -1,18 +1,30 @@
 import React, { useState } from 'react';
 import { Product } from '../types';
-import { ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlayCircle, Image as ImageIcon } from 'lucide-react';
 
 interface ProductMediaGalleryProps {
   product: Product;
 }
 
 const ProductMediaGallery: React.FC<ProductMediaGalleryProps> = ({ product }) => {
-  // Combinamos video e imágenes, colocando el video al principio si existe
   const allMedia = product.video 
     ? [{ type: 'video', url: product.video }, ...product.images.map(url => ({ type: 'image', url }))]
     : product.images.map(url => ({ type: 'image', url }));
 
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+
+  // --- COMIENZO DE LA CORRECCIÓN ---
+  // Si no hay medios, no se puede continuar.
+  if (allMedia.length === 0) {
+    return (
+      <div className="w-full">
+        <div className="relative aspect-[4/5] bg-gray-200 flex items-center justify-center">
+          <ImageIcon size={48} className="text-gray-400" />
+        </div>
+      </div>
+    );
+  }
+  // --- FIN DE LA CORRECCIÓN ---
 
   const goToNext = () => {
     setCurrentMediaIndex((prevIndex) => (prevIndex + 1) % allMedia.length);
@@ -26,8 +38,7 @@ const ProductMediaGallery: React.FC<ProductMediaGalleryProps> = ({ product }) =>
 
   return (
     <div className="w-full">
-      {/* Media principal (imagen o video) */}
-      <div className="relative aspect-[4/5] bg-gray-200"> {/* Proporción ideal para ropa */}
+      <div className="relative aspect-[4/5] bg-gray-200">
         {currentMedia.type === 'video' ? (
           <iframe 
             src={currentMedia.url} 
@@ -46,9 +57,8 @@ const ProductMediaGallery: React.FC<ProductMediaGalleryProps> = ({ product }) =>
         )}
       </div>
 
-      {/* Carrusel de miniaturas para móviles y escritorio */}
       {allMedia.length > 1 && (
-        <div className="px-4 sm:px-0 mt-2"> {/* Padding solo en móvil para que las miniaturas no toquen los bordes */}
+        <div className="px-4 sm:px-0 mt-2">
             <div className="flex space-x-2 overflow-x-auto no-scrollbar py-2">
             {allMedia.map((media, index) => (
               <button

@@ -1,11 +1,14 @@
 import React from 'react';
 import { Ruler, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useScrollAnimation } from '../hooks/useScrollAnimation';
 
 const SizeGuidePage: React.FC = () => {
+  const contentRef = useScrollAnimation<HTMLDivElement>();
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+      <div ref={contentRef} className="container mx-auto px-4 max-w-4xl scroll-animate">
         <Link
           to="/tienda"
           className="inline-flex items-center text-gray-600 hover:text-[#D8A7B1] mb-8 transition-colors"

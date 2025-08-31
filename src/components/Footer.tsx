@@ -36,9 +36,9 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-white/80 hover:text-white transition-colors">
+                <Link to="/cambios-y-devoluciones" className="text-white/80 hover:text-white transition-colors">
                   Cambios y Devoluciones
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -47,14 +47,14 @@ const Footer: React.FC = () => {
             <h4 className="font-bold mb-4">Ayuda</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-white/80 hover:text-white transition-colors">
+                <Link to="/preguntas-frecuentes" className="text-white/80 hover:text-white transition-colors">
                   Preguntas Frecuentes
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-white/80 hover:text-white transition-colors">
+                <Link to="/cambios-y-devoluciones" className="text-white/80 hover:text-white transition-colors">
                   Envíos
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="#" className="text-white/80 hover:text-white transition-colors">

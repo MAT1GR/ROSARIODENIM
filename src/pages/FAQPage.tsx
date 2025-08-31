@@ -2,11 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, HelpCircle } from 'lucide-react';
 import Accordion from '../components/Accordion';
+import { useScrollAnimation } from '../hooks/useScrollAnimation';
 
 const FAQPage: React.FC = () => {
+  const contentRef = useScrollAnimation<HTMLDivElement>();
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto max-w-3xl px-4">
+      <div ref={contentRef} className="container mx-auto max-w-3xl px-4 scroll-animate">
         <Link
           to="/tienda"
           className="inline-flex items-center text-gray-600 hover:text-[#D8A7B1] mb-8 transition-colors"

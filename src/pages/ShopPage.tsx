@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
+import { useScrollAnimation } from '../hooks/useScrollAnimation';
 
 type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'popular';
 
@@ -12,14 +13,14 @@ const ShopPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Estado unificado para todos los filtros
   const [filters, setFilters] = useState({
     category: '',
     sortBy: 'newest' as SortOption,
     page: 1,
   });
 
-  // Este efecto se ejecuta cada vez que 'filters' cambia
+  const productsRef = useScrollAnimation();
+
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -47,17 +48,15 @@ const ShopPage: React.FC = () => {
   }, [filters]);
 
   const handleFilterChange = (key: keyof typeof filters, value: string | number) => {
-    setFilters(prev => ({ ...prev, [key]: value, page: 1 })); // Resetea a la página 1 en cualquier cambio de filtro
+    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
   };
 
-  // Asumimos que las categorías vienen de una API o están predefinidas
   const categories = ['Mom Jeans', 'Wide Leg', 'Flare', 'Straight'];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Filters Sidebar */}
           <aside className="lg:w-1/4">
             <div className="bg-white p-6 rounded-lg shadow-sm sticky top-28">
               <div className="flex items-center justify-between mb-6">
@@ -65,7 +64,6 @@ const ShopPage: React.FC = () => {
                 <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden p-2 text-gray-600"><Filter size={20} /></button>
               </div>
               <div className={`space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-                {/* Category Filter */}
                 <div>
                   <h3 className="font-medium mb-3">ESTILO</h3>
                   <div className="space-y-2">
@@ -79,8 +77,7 @@ const ShopPage: React.FC = () => {
             </div>
           </aside>
 
-          {/* Products Grid */}
-          <main className="lg:w-3/4">
+          <main ref={productsRef} className="lg:w-3/4 scroll-animate">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
               <h1 className="text-2xl font-bold">Tienda ({totalProducts} productos)</h1>
               <select
@@ -107,7 +104,6 @@ const ShopPage: React.FC = () => {
                 <div className="text-center py-16"><p className="text-xl text-gray-600">No se encontraron productos con esos filtros.</p></div>
             )}
 
-            {/* Pagination */}
             {totalPages > 1 && (
                 <div className="flex justify-center items-center mt-12 gap-4">
                     <button onClick={() => handleFilterChange('page', filters.page - 1)} disabled={filters.page <= 1} className="p-2 disabled:opacity-50"><ChevronLeft/></button>
@@ -122,7 +118,6 @@ const ShopPage: React.FC = () => {
   );
 };
 
-// Componente de esqueleto para el estado de carga
 const SkeletonCard = () => (
     <div className="bg-white rounded-lg overflow-hidden shadow-sm animate-pulse">
         <div className="aspect-[3/4] bg-gray-200"></div>

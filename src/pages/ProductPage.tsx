@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Plus, Minus, Info, CheckCircle, HelpCircle } from 'lucide-react';
+import { Plus, Minus, Info, CheckCircle, HelpCircle, Feather, Move, TrendingUp, Ruler } from 'lucide-react';
 import { Product } from '../types';
 import { useCart } from '../hooks/useCart.tsx';
 import ProductCarousel from '../components/ProductCarousel';
-import SizeGuideModal from '../components/SizeGuideModal';
 import ProductMediaGallery from '../components/ProductMediaGallery';
+import { useScrollAnimation } from '../hooks/useScrollAnimation';
 
 const Breadcrumbs: React.FC<{ product: Product }> = ({ product }) => (
     <nav className="text-sm text-brand-secondary-text mb-4">
@@ -27,7 +27,10 @@ const ProductPage: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const galleryRef = useScrollAnimation<HTMLDivElement>();
+  const detailsRef = useScrollAnimation<HTMLDivElement>();
+  const relatedRef = useScrollAnimation<HTMLElement>();
 
   const STANDARD_SIZES = ['34', '36', '38', '40', '42'];
 
@@ -102,120 +105,129 @@ const ProductPage: React.FC = () => {
   const isInStock = selectedSizeInfo?.available && selectedSizeInfo?.stock > 0;
   const maxStock = selectedSizeInfo?.stock || 0;
 
+  const Feature = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined }) => (
+    value ? (
+        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <Icon className="text-brand-pink" size={24} />
+            <div>
+                <p className="text-xs text-brand-secondary-text">{label}</p>
+                <p className="text-sm font-semibold text-brand-primary-text">{value}</p>
+            </div>
+        </div>
+    ) : null
+  );
+
   return (
-    <>
-      {isModalOpen && <SizeGuideModal onClose={() => setIsModalOpen(false)} />}
-      <div className="bg-brand-bg">
-        <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-8 max-w-7xl mx-auto lg:px-8 lg:py-12">
-          
-          <div className="lg:col-span-1">
-            <ProductMediaGallery product={product} />
-          </div>
+    <div className="bg-brand-bg">
+      <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-8 max-w-7xl mx-auto lg:px-8 lg:py-12">
+        
+        <div ref={galleryRef} className="lg:col-span-1 scroll-animate">
+          <ProductMediaGallery product={product} />
+        </div>
 
-          <div className="w-full lg:col-span-1 lg:sticky lg:top-24 h-fit"> 
-            <div className="px-4 sm:px-6 lg:px-0 py-8 lg:py-0">
-              <Breadcrumbs product={product} />
-              <h1 className="text-3xl font-black text-brand-primary-text tracking-wide uppercase">
-                {product.name} {selectedSize && `- Talle ${selectedSize}`}
-              </h1>
-              <p className="text-2xl font-bold text-brand-primary-text mt-2">${product.price.toLocaleString('es-AR')}</p>
+        <div ref={detailsRef} className="w-full lg:col-span-1 lg:sticky lg:top-24 h-fit scroll-animate" style={{ animationDelay: '200ms' }}> 
+          <div className="px-4 sm:px-6 lg:px-0 py-8 lg:py-0">
+            <Breadcrumbs product={product} />
+            <h1 className="text-3xl font-black text-brand-primary-text tracking-wide uppercase">
+              {product.name}
+            </h1>
+            <p className="text-2xl font-bold text-brand-primary-text mt-2">${product.price.toLocaleString('es-AR')}</p>
+            {selectedSize && <p className="text-md font-medium text-brand-secondary-text mt-2">Talle: {selectedSize}</p>}
 
-              <div className="mt-8">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-medium text-brand-primary-text">Talle:</p>
-                  <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-1 text-sm text-[#D8A7B1] hover:underline font-semibold">
-                    <HelpCircle size={16} />
-                    ¿No sabes tu talle?
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {STANDARD_SIZES.map((size) => {
-                    const sizeInfo = product.sizes[size];
-                    const isAvailable = sizeInfo?.available && sizeInfo?.stock > 0;
-                    return (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        disabled={!isAvailable}
-                        className={`px-4 py-2 text-center border rounded-sm transition-all duration-200 text-sm font-medium ${
-                          !isAvailable
-                            ? 'border-gray-200 text-gray-400 line-through cursor-not-allowed bg-gray-50'
-                            : selectedSize === size
-                            ? 'bg-brand-button-bg text-white border-brand-button-bg'
-                            : 'border-brand-border text-brand-primary-text hover:border-brand-primary-text'
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    )
-                  })}
-                </div>
+
+            <div className="mt-8">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-sm font-medium text-brand-primary-text">Elegí tu talle:</p>
+                <Link to="/tallas" className="flex items-center gap-1 text-sm text-[#D8A7B1] hover:underline font-semibold">
+                  <HelpCircle size={16} />
+                  ¿No sabes tu talle?
+                </Link>
               </div>
-              
-              <div className="mt-8 flex items-end gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-brand-primary-text mb-2">Cantidad:</p>
-                    <div className="flex items-center border border-brand-border rounded-sm w-fit">
-                      <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3 py-3 text-brand-secondary-text hover:text-brand-primary-text"><Minus size={16} /></button>
-                      <span className="px-4 text-center font-bold text-lg text-brand-primary-text">{quantity}</span>
-                      <button onClick={() => setQuantity(Math.min(maxStock, quantity + 1))} disabled={quantity >= maxStock} className="px-3 py-3 text-brand-secondary-text hover:text-brand-primary-text disabled:text-gray-300"><Plus size={16} /></button>
-                    </div>
+              <div className="flex flex-wrap gap-2">
+                {STANDARD_SIZES.map((size) => {
+                  const sizeInfo = product.sizes[size];
+                  const isAvailable = sizeInfo?.available && sizeInfo?.stock > 0;
+                  return (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      disabled={!isAvailable}
+                      className={`px-4 py-2 text-center border rounded-sm transition-all duration-200 text-sm font-medium ${
+                        !isAvailable
+                          ? 'border-gray-200 text-gray-400 line-through cursor-not-allowed bg-gray-50'
+                          : selectedSize === size
+                          ? 'bg-brand-button-bg text-white border-brand-button-bg'
+                          : 'border-brand-border text-brand-primary-text hover:border-brand-primary-text'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            
+            <div className="mt-8 flex items-end gap-4">
+                <div>
+                  <p className="text-sm font-medium text-brand-primary-text mb-2">Cantidad:</p>
+                  <div className="flex items-center border border-brand-border rounded-sm w-fit">
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3 py-3 text-brand-secondary-text hover:text-brand-primary-text"><Minus size={16} /></button>
+                    <span className="px-4 text-center font-bold text-lg text-brand-primary-text">{quantity}</span>
+                    <button onClick={() => setQuantity(Math.min(maxStock, quantity + 1))} disabled={quantity >= maxStock} className="px-3 py-3 text-brand-secondary-text hover:text-brand-primary-text disabled:text-gray-300"><Plus size={16} /></button>
                   </div>
-                  <button
-                      onClick={handleAddToCart}
-                      disabled={!selectedSize || !isInStock || addedToCart}
-                      className={`flex-1 py-3 text-sm font-bold rounded-sm flex items-center justify-center transition-colors ${
-                          addedToCart 
-                          ? 'bg-emerald-500 text-white'
-                          : (selectedSize && isInStock)
-                          ? 'bg-brand-button-bg hover:bg-brand-button-bg-hover text-white'
-                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      }`}
-                  >
-                      {addedToCart ? <><CheckCircle className="mr-2" size={16} /> Agregado</> : 'Agregar al Carrito'}
-                  </button>
-              </div>
+                </div>
+                <button
+                    onClick={handleAddToCart}
+                    disabled={!selectedSize || !isInStock || addedToCart}
+                    className={`flex-1 py-3 text-sm font-bold rounded-sm flex items-center justify-center transition-colors ${
+                        addedToCart 
+                        ? 'bg-emerald-500 text-white'
+                        : (selectedSize && isInStock)
+                        ? 'bg-brand-button-bg hover:bg-brand-button-bg-hover text-white'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                >
+                    {addedToCart ? <><CheckCircle className="mr-2" size={16} /> Agregado</> : 'Agregar al Carrito'}
+                </button>
+            </div>
 
-              <div className="mt-3">
-                   <button
-                      onClick={handleBuyNow}
-                      disabled={!selectedSize || !isInStock}
-                      className={`w-full py-4 text-base font-bold rounded-sm flex items-center justify-center transition-opacity ${
-                          (selectedSize && isInStock) ? 'bg-brand-pink hover:opacity-90 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      }`}
-                  >
-                    Comprar Ahora
-                  </button>
-              </div>
+            <div className="mt-3">
+                 <button
+                    onClick={handleBuyNow}
+                    disabled={!selectedSize || !isInStock}
+                    className={`w-full py-4 text-base font-bold rounded-sm flex items-center justify-center transition-opacity ${
+                        (selectedSize && isInStock) ? 'bg-brand-pink hover:opacity-90 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                >
+                  Comprar Ahora
+                </button>
+            </div>
 
-              <div className="mt-8 border-t pt-6">
-                <h3 className="font-bold text-lg text-brand-primary-text mb-3">Descripción Técnica</h3>
-                <ul className="space-y-2 text-sm text-brand-secondary-text list-disc list-inside">
-                  <li><span className="font-semibold text-brand-primary-text">Tela:</span> {product.material}</li>
-                  <li><span className="font-semibold text-brand-primary-text">Calce:</span> {product.fit}</li>
-                  <li><span className="font-semibold text-brand-primary-text">Tiro:</span> {product.rise}</li>
-                  {selectedSizeInfo && (
-                    <li><span className="font-semibold text-brand-primary-text">Medidas Talle {selectedSize}:</span> {selectedSizeInfo.measurements}</li>
-                  )}
-                </ul>
+            <div className="mt-8 border-t pt-6">
+              <h3 className="font-bold text-lg text-brand-primary-text mb-4">Características</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Feature icon={Feather} label="Tela" value={product.material} />
+                  <Feature icon={Move} label="Calce" value={product.fit} />
+                  <Feature icon={TrendingUp} label="Tiro" value={product.rise} />
+                  {selectedSizeInfo && <Feature icon={Ruler} label={`Medidas Talle ${selectedSize}`} value={selectedSizeInfo.measurements} />}
               </div>
-              
-              <div className="mt-6 p-3 bg-brand-light rounded-sm items-start gap-3 text-xs text-brand-secondary-text flex">
-                  <Info size={20} className="flex-shrink-0 mt-0.5" />
-                  <span>El pedido se despacha de 4 a 7 días HÁBILES luego de haber realizado el pago ❤️</span>
-              </div>
+            </div>
+            
+            <div className="mt-6 p-3 bg-brand-light rounded-sm items-start gap-3 text-xs text-brand-secondary-text flex">
+                <Info size={20} className="flex-shrink-0 mt-0.5" />
+                <span>El pedido se despacha de 4 a 7 días HÁBILES luego de haber realizado el pago ❤️</span>
             </div>
           </div>
         </div>
-
-        <section className="py-16">
-          <div className="container mx-auto max-w-6xl px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">También te puede interesar</h2>
-            <ProductCarousel products={relatedProducts} />
-          </div>
-        </section>
       </div>
-    </>
+
+      <section ref={relatedRef} className="py-16 scroll-animate">
+        <div className="container mx-auto max-w-6xl px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">También te puede interesar</h2>
+          <ProductCarousel products={relatedProducts} />
+        </div>
+      </section>
+    </div>
   );
 };
 

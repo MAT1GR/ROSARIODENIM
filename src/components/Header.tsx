@@ -41,7 +41,8 @@ const Header: React.FC = () => {
                 <Link
                   key={link.href}
                   to={link.href}
-                  className={`text-base font-medium text-brand-gray hover:text-brand-dark relative after:content-[''] after:absolute after:w-full after:h-[2px] after:bottom-[-4px] after:left-0 after:bg-brand-pink after:transition-transform after:duration-300 ${
+                  // --- CAMBIO AQUÍ: Se añade la clase "font-poppins" ---
+                  className={`font-poppins text-base font-medium text-brand-gray hover:text-brand-dark relative after:content-[''] after:absolute after:w-full after:h-[2px] after:bottom-[-4px] after:left-0 after:bg-brand-pink after:transition-transform after:duration-300 ${
                     location.pathname === link.href ? 'text-brand-dark after:scale-x-100' : 'after:scale-x-0 hover:after:scale-x-50'
                   }`}
                 >
@@ -76,7 +77,7 @@ const Header: React.FC = () => {
           </div>
           <nav className="flex flex-col space-y-8">
             {navLinks.map(link => (
-              <Link key={link.href} to={link.href} className={`text-2xl font-bold ${location.pathname === link.href ? 'text-brand-pink' : 'text-brand-dark'}`}>
+              <Link key={link.href} to={link.href} className={`text-2xl font-bold font-poppins ${location.pathname === link.href ? 'text-brand-pink' : 'text-brand-dark'}`}> {/* CAMBIO AQUÍ */}
                 {link.label}
               </Link>
             ))}
