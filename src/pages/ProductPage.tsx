@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Plus, Minus, Info, CheckCircle } from 'lucide-react';
+import { Plus, Minus, Info, CheckCircle, HelpCircle } from 'lucide-react';
 import { Product } from '../types';
 import { useCart } from '../hooks/useCart.tsx';
 import ProductCarousel from '../components/ProductCarousel';
+import SizeGuideModal from '../components/SizeGuideModal';
+import ProductMediaGallery from '../components/ProductMediaGallery';
 
-// Componente para los breadcrumbs (migas de pan)
 const Breadcrumbs: React.FC<{ product: Product }> = ({ product }) => (
-    <nav className="text-xs text-brand-secondary-text mb-3">
+    <nav className="text-sm text-brand-secondary-text mb-4">
         <Link to="/" className="hover:text-brand-primary-text">Inicio</Link>
         <span className="mx-2">/</span>
         <Link to="/tienda" className="hover:text-brand-primary-text uppercase">{product.category}</Link>
@@ -26,9 +27,9 @@ const ProductPage: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
-  const [postalCode, setPostalCode] = useState('');
-  const [shippingCost, setShippingCost] = useState<number | null>(null);
-  const [isCalculating, setIsCalculating] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const STANDARD_SIZES = ['34', '36', '38', '40', '42'];
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -44,9 +45,11 @@ const ProductPage: React.FC = () => {
             const productData = await productRes.json();
             setProduct(productData);
             
-            const availableSizes = Object.keys(productData.sizes).filter(size => productData.sizes[size].available);
+            const availableSizes = Object.keys(productData.sizes).filter(size => productData.sizes[size].available && productData.sizes[size].stock > 0);
             if (availableSizes.length > 0) {
                 setSelectedSize(availableSizes[0]);
+            } else {
+                setSelectedSize('');
             }
 
             if (allProductsRes.ok) {
@@ -67,6 +70,12 @@ const ProductPage: React.FC = () => {
     fetchProductData();
   }, [id]);
 
+  useEffect(() => {
+    if (product) {
+      document.title = `${product.name} - ${selectedSize ? `Talle ${selectedSize}` : 'Rosario Denim'}`;
+    }
+  }, [product, selectedSize]);
+
   const handleAddToCart = () => {
     if (product && selectedSize && isInStock) {
       addToCart(product, selectedSize, quantity);
@@ -82,36 +91,8 @@ const ProductPage: React.FC = () => {
     }
   };
 
-  const handleCalculateShipping = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!postalCode) return;
-    setIsCalculating(true);
-    try {
-      // Simulamos la lógica de Correo Argentino
-      // En una aplicación real, aquí harías una llamada a la API de Correo Argentino
-      // para obtener costos reales basados en el CP y las dimensiones/peso del producto.
-      // Para este ejemplo, usaremos valores fijos basados en la provincia.
-      
-      let cost = 0;
-      // Asumimos un costo base y lo ajustamos si es un CP de Rosario (Santa Fe)
-      const rosarioCPs = ['2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010']; 
-      if (rosarioCPs.includes(postalCode)) {
-          cost = 950; // Costo más bajo para la ciudad
-      } else {
-          cost = 1800; // Costo para el resto del país
-      }
-
-      setShippingCost(cost);
-    } catch (error) {
-      console.error("Error al calcular envío:", error);
-      setShippingCost(null); // En caso de error, reseteamos el costo
-    } finally {
-      setIsCalculating(false);
-    }
-  };
-
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center"><p>Cargando...</p></div>;
+    return <div className="min-h-screen flex items-center justify-center"><p>Cargando producto...</p></div>;
   }
   if (!product) {
     return <div className="min-h-screen flex items-center justify-center"><p>Producto no encontrado.</p></div>;
@@ -119,139 +100,122 @@ const ProductPage: React.FC = () => {
 
   const selectedSizeInfo = selectedSize ? product.sizes[selectedSize] : null;
   const isInStock = selectedSizeInfo?.available && selectedSizeInfo?.stock > 0;
+  const maxStock = selectedSizeInfo?.stock || 0;
 
   return (
-    <div className="bg-brand-bg">
-      <div className="grid grid-cols-1 lg:grid-cols-2">
-        
-        {/* Columna de Imágenes (Izquierda) */}
-        <div className="w-full space-y-4 lg:col-span-1">
-          {product.images.map((image, index) => (
-              <div key={index} className="bg-brand-light">
-                  <img src={image} alt={`${product.name} - Vista ${index + 1}`} className="w-full h-full object-cover" />
-              </div>
-          ))}
-        </div>
+    <>
+      {isModalOpen && <SizeGuideModal onClose={() => setIsModalOpen(false)} />}
+      <div className="bg-brand-bg">
+        <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-8 max-w-7xl mx-auto lg:px-8 lg:py-12">
+          
+          <div className="lg:col-span-1">
+            <ProductMediaGallery product={product} />
+          </div>
 
-        {/* Columna de Información (Derecha) */}
-        {/* Restauramos lg:sticky lg:top-24 y agregamos h-fit para que la columna se ajuste a su contenido */}
-        <div className="w-full lg:col-span-1 lg:sticky lg:top-24 h-fit"> 
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-            <Breadcrumbs product={product} />
-            <h1 className="text-3xl font-black text-brand-pink tracking-wide uppercase">{product.name}</h1>
-            <p className="text-2xl font-bold text-brand-primary-text mt-2">${product.price.toLocaleString('es-AR')}</p>
-            <Link to="#" className="text-xs text-brand-secondary-text hover:underline mt-1 inline-block">Ver más detalles</Link>
+          <div className="w-full lg:col-span-1 lg:sticky lg:top-24 h-fit"> 
+            <div className="px-4 sm:px-6 lg:px-0 py-8 lg:py-0">
+              <Breadcrumbs product={product} />
+              <h1 className="text-3xl font-black text-brand-primary-text tracking-wide uppercase">
+                {product.name} {selectedSize && `- Talle ${selectedSize}`}
+              </h1>
+              <p className="text-2xl font-bold text-brand-primary-text mt-2">${product.price.toLocaleString('es-AR')}</p>
 
-            <div className="mt-8">
-              <p className="text-sm font-medium text-brand-primary-text mb-2">Talle: <span className="font-normal text-brand-secondary-text">{selectedSize || 'Selecciona un talle'}</span></p>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(product.sizes).map(([size, info]) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    disabled={!info.available}
-                    className={`px-4 py-2 text-center border rounded-sm transition-all duration-200 text-sm font-medium ${
-                      !info.available
-                        ? 'border-gray-200 text-gray-400 line-through cursor-not-allowed bg-gray-50'
-                        : selectedSize === size
-                        ? 'bg-brand-button-bg text-white border-brand-button-bg'
-                        : 'border-brand-border text-brand-primary-text hover:border-brand-primary-text'
-                    }`}
-                  >
-                    {size}
+              <div className="mt-8">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-sm font-medium text-brand-primary-text">Talle:</p>
+                  <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-1 text-sm text-[#D8A7B1] hover:underline font-semibold">
+                    <HelpCircle size={16} />
+                    ¿No sabes tu talle?
                   </button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="mt-8">
-                <p className="text-sm font-medium text-brand-primary-text mb-2">Cantidad:</p>
-                <div className="flex items-center border border-brand-border rounded-sm w-fit">
-                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3 py-3 text-brand-secondary-text hover:text-brand-primary-text"><Minus size={16} /></button>
-                  <span className="px-4 text-center font-bold text-lg text-brand-primary-text">{quantity}</span>
-                  <button onClick={() => setQuantity(quantity + 1)} className="px-3 py-3 text-brand-secondary-text hover:text-brand-primary-text"><Plus size={16} /></button>
                 </div>
-            </div>
-
-            <div className="mt-8 grid grid-cols-1 gap-3">
-                <button
-                    onClick={handleAddToCart}
-                    disabled={!selectedSize || !isInStock || addedToCart}
-                    className={`w-full py-3 text-sm font-bold rounded-sm flex items-center justify-center transition-colors ${
-                        addedToCart 
-                        ? 'bg-emerald-500 text-white'
-                        : (selectedSize && isInStock)
-                        ? 'bg-brand-button-bg hover:bg-brand-button-bg-hover text-white'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    }`}
-                >
-                    {addedToCart ? <><CheckCircle className="mr-2" size={16} /> Agregado</> : 'Agregar al Carrito'}
-                </button>
-                 <button
-                    onClick={handleBuyNow}
-                    disabled={!selectedSize || !isInStock}
-                    className={`w-full py-3 text-sm font-bold rounded-sm flex items-center justify-center ${
-                        (selectedSize && isInStock) ? 'bg-brand-pink hover:opacity-90 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    }`}
-                >
-                  Comprar
-                </button>
-            </div>
-            
-            <div className="mt-6 p-3 bg-brand-light rounded-sm items-start gap-3 text-xs text-brand-secondary-text flex"> {/* Ahora visible en todas las pantallas */}
-                <Info size={20} className="flex-shrink-0 mt-0.5" />
-                <span>El pedido se despacha de 4 a 7 días HÁBILES luego de haber realizado el pago ❤️</span>
-            </div>
-
-            <div className="mt-8">
-                <p className="text-sm font-bold text-brand-primary-text mb-2">Calcular Costo De Envío:</p>
-                <form onSubmit={handleCalculateShipping} className="flex gap-2">
-                    <input
-                        type="text"
-                        value={postalCode}
-                        onChange={(e) => setPostalCode(e.target.value)}
-                        placeholder="Tu código postal"
-                        className="flex-1 p-3 border border-brand-border rounded-sm focus:outline-none focus:border-brand-primary-text text-sm"
-                    />
-                    <button type="submit" disabled={isCalculating} className="px-6 bg-brand-button-bg text-white text-sm font-bold rounded-sm hover:bg-brand-button-bg-hover disabled:opacity-50">
-                        {isCalculating ? '...' : 'Calcular'}
-                    </button>
-                </form>
-                <a href="https://www.correoargentino.com.ar/formularios/cpa" target="_blank" rel="noopener noreferrer" className="text-xs text-brand-secondary-text hover:underline mt-2 inline-block">
-                    No sé mi código postal
-                </a>
-                
-                {shippingCost !== null && (
-                    <div className="mt-4 border border-brand-border rounded-sm text-sm">
-                        <div className="p-3 flex justify-between items-center">
-                            <div>
-                                <p className="font-bold text-brand-primary-text">Retiro por sucursal</p>
-                                <p className="text-xs text-brand-secondary-text">3 a 6 días hábiles</p>
-                            </div>
-                            <span className="font-bold text-brand-primary-text">${shippingCost.toLocaleString('es-AR')}</span>
-                        </div>
-                         <div className="p-3 flex justify-between items-center border-t border-brand-border">
-                            <div>
-                                <p className="font-bold text-brand-primary-text">Envío a domicilio</p>
-                                <p className="text-xs text-brand-secondary-text">3 a 6 días hábiles</p>
-                            </div>
-                            <span className="font-bold text-brand-primary-text">${(shippingCost + 1344).toLocaleString('es-AR')}</span>
-                        </div>
+                <div className="flex flex-wrap gap-2">
+                  {STANDARD_SIZES.map((size) => {
+                    const sizeInfo = product.sizes[size];
+                    const isAvailable = sizeInfo?.available && sizeInfo?.stock > 0;
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        disabled={!isAvailable}
+                        className={`px-4 py-2 text-center border rounded-sm transition-all duration-200 text-sm font-medium ${
+                          !isAvailable
+                            ? 'border-gray-200 text-gray-400 line-through cursor-not-allowed bg-gray-50'
+                            : selectedSize === size
+                            ? 'bg-brand-button-bg text-white border-brand-button-bg'
+                            : 'border-brand-border text-brand-primary-text hover:border-brand-primary-text'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+              
+              <div className="mt-8 flex items-end gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-brand-primary-text mb-2">Cantidad:</p>
+                    <div className="flex items-center border border-brand-border rounded-sm w-fit">
+                      <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3 py-3 text-brand-secondary-text hover:text-brand-primary-text"><Minus size={16} /></button>
+                      <span className="px-4 text-center font-bold text-lg text-brand-primary-text">{quantity}</span>
+                      <button onClick={() => setQuantity(Math.min(maxStock, quantity + 1))} disabled={quantity >= maxStock} className="px-3 py-3 text-brand-secondary-text hover:text-brand-primary-text disabled:text-gray-300"><Plus size={16} /></button>
                     </div>
-                )}
+                  </div>
+                  <button
+                      onClick={handleAddToCart}
+                      disabled={!selectedSize || !isInStock || addedToCart}
+                      className={`flex-1 py-3 text-sm font-bold rounded-sm flex items-center justify-center transition-colors ${
+                          addedToCart 
+                          ? 'bg-emerald-500 text-white'
+                          : (selectedSize && isInStock)
+                          ? 'bg-brand-button-bg hover:bg-brand-button-bg-hover text-white'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      }`}
+                  >
+                      {addedToCart ? <><CheckCircle className="mr-2" size={16} /> Agregado</> : 'Agregar al Carrito'}
+                  </button>
+              </div>
+
+              <div className="mt-3">
+                   <button
+                      onClick={handleBuyNow}
+                      disabled={!selectedSize || !isInStock}
+                      className={`w-full py-4 text-base font-bold rounded-sm flex items-center justify-center transition-opacity ${
+                          (selectedSize && isInStock) ? 'bg-brand-pink hover:opacity-90 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      }`}
+                  >
+                    Comprar Ahora
+                  </button>
+              </div>
+
+              <div className="mt-8 border-t pt-6">
+                <h3 className="font-bold text-lg text-brand-primary-text mb-3">Descripción Técnica</h3>
+                <ul className="space-y-2 text-sm text-brand-secondary-text list-disc list-inside">
+                  <li><span className="font-semibold text-brand-primary-text">Tela:</span> {product.material}</li>
+                  <li><span className="font-semibold text-brand-primary-text">Calce:</span> {product.fit}</li>
+                  <li><span className="font-semibold text-brand-primary-text">Tiro:</span> {product.rise}</li>
+                  {selectedSizeInfo && (
+                    <li><span className="font-semibold text-brand-primary-text">Medidas Talle {selectedSize}:</span> {selectedSizeInfo.measurements}</li>
+                  )}
+                </ul>
+              </div>
+              
+              <div className="mt-6 p-3 bg-brand-light rounded-sm items-start gap-3 text-xs text-brand-secondary-text flex">
+                  <Info size={20} className="flex-shrink-0 mt-0.5" />
+                  <span>El pedido se despacha de 4 a 7 días HÁBILES luego de haber realizado el pago ❤️</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* --- SECCIÓN "TE PUEDE INTERESAR" --- */}
-      <section className="py-16">
-        <div className="container mx-auto max-w-6xl px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Te puede interesar</h2>
-          <ProductCarousel products={relatedProducts} />
-        </div>
-      </section>
-    </div>
+        <section className="py-16">
+          <div className="container mx-auto max-w-6xl px-4">
+            <h2 className="text-3xl font-bold text-center mb-12">También te puede interesar</h2>
+            <ProductCarousel products={relatedProducts} />
+          </div>
+        </section>
+      </div>
+    </>
   );
 };
 

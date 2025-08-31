@@ -18,7 +18,6 @@ export const getAllProducts = (req: Request, res: Response) => {
   }
 };
 
-// --- NUEVA FUNCIÓN ---
 export const getAllAdminProducts = (req: Request, res: Response) => {
     try {
         const products = db.products.getAllAdmin();
@@ -65,7 +64,18 @@ export const getProductById = (req: Request, res: Response) => {
 
 export const createProduct = (req: Request, res: Response) => {
     try {
-        const newProductData = req.body as Omit<Product, 'id'>;
+        const newProductData = req.body;
+        const files = req.files as Express.Multer.File[];
+        
+        // --- ¡CORRECCIÓN AQUÍ! ---
+        // Convertimos el string de talles de vuelta a un objeto
+        if (newProductData.sizes && typeof newProductData.sizes === 'string') {
+            newProductData.sizes = JSON.parse(newProductData.sizes);
+        }
+        
+        const imagePaths = files ? files.map(file => `/uploads/${file.filename}`) : [];
+        newProductData.images = imagePaths;
+        
         const createdProductId = db.products.create(newProductData);
         const createdProduct = db.products.getById(createdProductId);
         res.status(201).json(createdProduct);
@@ -77,7 +87,25 @@ export const createProduct = (req: Request, res: Response) => {
 
 export const updateProduct = (req: Request, res: Response) => {
     try {
-        const updated = db.products.update(req.params.id, req.body);
+        const { existingImages, ...productData } = req.body;
+        const files = req.files as Express.Multer.File[];
+
+        // --- ¡CORRECCIÓN AQUÍ! ---
+        // Hacemos lo mismo para la actualización
+        if (productData.sizes && typeof productData.sizes === 'string') {
+            productData.sizes = JSON.parse(productData.sizes);
+        }
+
+        let finalImagePaths = existingImages ? JSON.parse(existingImages) : [];
+        
+        if (files && files.length > 0) {
+            const newImagePaths = files.map(file => `/uploads/${file.filename}`);
+            finalImagePaths = [...finalImagePaths, ...newImagePaths];
+        }
+
+        productData.images = finalImagePaths;
+
+        const updated = db.products.update(req.params.id, productData);
         if (updated) {
             const updatedProduct = db.products.getById(req.params.id);
             res.json(updatedProduct);

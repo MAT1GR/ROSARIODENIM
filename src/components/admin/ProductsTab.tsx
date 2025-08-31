@@ -17,7 +17,6 @@ export const ProductsTab: React.FC = () => {
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-      // CORRECCIÓN: Apunta a la nueva ruta para admin
       const res = await fetch('/api/products/all');
       if (!res.ok) throw new Error('Failed to fetch');
       setProducts(await res.json());
@@ -29,17 +28,20 @@ export const ProductsTab: React.FC = () => {
     }
   };
 
-  const handleSaveProduct = async (data: any) => {
+  const handleSaveProduct = async (data: FormData) => {
     setIsSaving(true);
     const method = editingProduct ? 'PUT' : 'POST';
     const url = editingProduct ? `/api/products/${editingProduct.id}` : '/api/products';
 
     try {
+      // --- ¡CORRECCIÓN CLAVE! ---
+      // Al enviar FormData, NO debemos especificar el Content-Type.
+      // El navegador lo hace automáticamente.
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: data,
       });
+
       if (!response.ok) throw new Error('Error al guardar el producto');
       
       await fetchProducts();
@@ -104,7 +106,7 @@ export const ProductsTab: React.FC = () => {
               return (
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="p-4 flex items-center gap-3">
-                    <img src={product.images[0]} alt={product.name} className="w-12 h-12 object-cover rounded" />
+                    <img src={`http://localhost:3001${product.images[0]}`} alt={product.name} className="w-12 h-12 object-cover rounded" />
                     <span className="font-medium text-gray-800">{product.name}</span>
                   </td>
                   <td className="p-4 text-gray-700">${product.price.toLocaleString('es-AR')}</td>

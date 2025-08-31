@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { dbConnection } from './connection';
 import { Product, AdminUser, Category, Order, Customer, SiteSettings } from '../../types';
 
-// --- Helpers ---
+// --- Helpers (sin cambios) ---
 const parseProduct = (row: any): Product => ({
   id: String(row.id),
   name: row.name,
@@ -52,7 +52,7 @@ const parseCustomer = (row: any): Customer => ({
 });
 
 
-// --- Auth Services ---
+// --- Auth Services (sin cambios) ---
 export const authService = {
   authenticateAdmin: async (username: string, password: string): Promise<AdminUser | null> => {
     const user = dbConnection.prepare('SELECT * FROM admin_users WHERE username = ?').get(username) as AdminUser | undefined;
@@ -64,9 +64,8 @@ export const authService = {
   }
 };
 
-// --- Product Services ---
+// --- Product Services (ACTUALIZADO) ---
 export const productService = {
-  // Para la tienda pública (con filtros y paginación)
   getAll: (filters: { category?: string; sortBy?: string; page?: number; limit?: number }) => {
     const { category, sortBy, page = 1, limit = 9 } = filters;
     let whereClauses: string[] = ['is_active = 1'];
@@ -93,7 +92,6 @@ export const productService = {
     };
   },
 
-  // Para el panel de administración (todos los productos, sin filtros)
   getAllAdmin: (): Product[] => {
     const rows = dbConnection.prepare('SELECT * FROM products WHERE is_active = 1 ORDER BY id DESC').all();
     return rows.map(parseProduct);
@@ -115,11 +113,12 @@ export const productService = {
   },
   create: (product: Omit<Product, 'id'>): number => {
     const result = dbConnection.prepare(`
-      INSERT INTO products (name, price, images, category, description, material, rise, fit, sizes, is_new, is_best_seller)
-      VALUES (@name, @price, @images, @category, @description, @material, @rise, @fit, @sizes, @isNew, @isBestSeller)
+      INSERT INTO products (name, price, images, video, category, description, material, rise, fit, sizes, is_new, is_best_seller)
+      VALUES (@name, @price, @images, @video, @category, @description, @material, @rise, @fit, @sizes, @isNew, @isBestSeller)
     `).run({
       ...product,
       images: JSON.stringify(product.images),
+      video: product.video || null,
       sizes: JSON.stringify(product.sizes),
       isNew: product.isNew ? 1 : 0,
       isBestSeller: product.isBestSeller ? 1 : 0,
@@ -129,7 +128,7 @@ export const productService = {
   update: (id: string, data: Partial<Omit<Product, 'id'>>): boolean => {
     const stmt = dbConnection.prepare(`
       UPDATE products SET
-        name = @name, price = @price, images = @images, category = @category,
+        name = @name, price = @price, images = @images, video = @video, category = @category,
         description = @description, material = @material, rise = @rise, fit = @fit,
         sizes = @sizes, is_new = @isNew, is_best_seller = @isBestSeller,
         updated_at = CURRENT_TIMESTAMP
@@ -138,6 +137,7 @@ export const productService = {
     const result = stmt.run({
         id, ...data,
         images: JSON.stringify(data.images),
+        video: data.video || null,
         sizes: JSON.stringify(data.sizes),
         isNew: data.isNew ? 1 : 0,
         isBestSeller: data.isBestSeller ? 1 : 0,
@@ -150,7 +150,7 @@ export const productService = {
   }
 };
 
-// ... (resto de los servicios se mantienen igual)
+// ... (El resto de los servicios: categoryService, orderService, etc. se mantienen igual)
 export const categoryService = {
     getAll: (): Category[] => {
         const rows = dbConnection.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC').all();
@@ -191,13 +191,18 @@ export const categoryService = {
     }
 };
 export const orderService = {
-    create: (order: Omit<Order, 'id' | 'createdAt' | 'customer'>): number => {
+    create: (order: Order): number => {
         const result = dbConnection.prepare(`
-            INSERT INTO orders (customer_name, customer_email, items, total, status)
-            VALUES (@customer_name, @customer_email, @items, @total, @status)
+            INSERT INTO orders (id, customer_name, customer_email, items, total, status, created_at)
+            VALUES (@id, @customer_name, @customer_email, @items, @total, @status, @created_at)
         `).run({
-            ...order,
+            id: order.id,
+            customer_name: order.customer.name,
+            customer_email: order.customer.email,
             items: JSON.stringify(order.items),
+            total: order.total,
+            status: order.status,
+            created_at: order.createdAt.toISOString(),
         });
         return result.lastInsertRowid as number;
     },
@@ -211,6 +216,19 @@ export const orderService = {
     }
 };
 export const customerService = {
+    findOrCreate: (customer: { email: string; name: string; phone?: string }): number => {
+        let existingCustomer = dbConnection.prepare('SELECT id FROM customers WHERE email = ?').get(customer.email) as { id: number } | undefined;
+
+        if (existingCustomer) {
+            dbConnection.prepare('UPDATE customers SET name = ?, phone = ?, order_count = order_count + 1 WHERE id = ?')
+                .run(customer.name, customer.phone || null, existingCustomer.id);
+            return existingCustomer.id;
+        } else {
+            const result = dbConnection.prepare('INSERT INTO customers (name, email, phone, order_count) VALUES (?, ?, ?, 1)')
+                .run(customer.name, customer.email, customer.phone || null);
+            return result.lastInsertRowid as number;
+        }
+    },
     getAll: (): Customer[] => {
         const rows = dbConnection.prepare('SELECT * FROM customers ORDER BY created_at DESC').all();
         return rows.map(parseCustomer);

@@ -13,10 +13,11 @@ const CheckoutPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { getTotalPrice } = useCart();
-    const { preferenceId } = location.state || {};
+    // --- CORRECCIÓN CLAVE ---
+    // Obtenemos los items del estado de la navegación.
+    const { preferenceId, items, shippingCost } = location.state || {};
     const [isLoading, setIsLoading] = useState(true);
     
-    // Usamos una referencia para mantener la instancia del Brick entre renders
     const cardPaymentBrickController = useRef<any>(null);
 
     useEffect(() => {
@@ -25,7 +26,7 @@ const CheckoutPage: React.FC = () => {
             return;
         }
 
-        let isMounted = true; // Para evitar actualizaciones en un componente desmontado
+        let isMounted = true;
 
         const script = document.createElement('script');
         script.src = 'https://sdk.mercadopago.com/js/v2';
@@ -51,13 +52,21 @@ const CheckoutPage: React.FC = () => {
                     visual: { style: { theme: 'default' } }
                 },
                 callbacks: {
-                    onReady: () => { /* El Brick está listo */ },
+                    onReady: () => {},
                     onSubmit: async (cardFormData: any) => {
                         try {
                             const response = await fetch('/api/payments/process-payment', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(cardFormData),
+                                // --- CORRECCIÓN CLAVE ---
+                                // Enviamos los items y el costo de envío junto a los datos del pago.
+                                body: JSON.stringify({
+                                    ...cardFormData,
+                                    order: {
+                                        items: items,
+                                        shippingCost: shippingCost
+                                    }
+                                }),
                             });
 
                             const paymentResult = await response.json();
@@ -66,8 +75,6 @@ const CheckoutPage: React.FC = () => {
                                 throw new Error(paymentResult.message || 'Error en el pago');
                             }
                             
-                            // --- ¡ESTA ES LA LÍNEA CLAVE! ---
-                            // Si todo salió bien, redirigimos a la página de éxito.
                             navigate('/payment-success');
 
                         } catch (error) {
@@ -77,7 +84,6 @@ const CheckoutPage: React.FC = () => {
                     },
                     onError: (error: any) => {
                         console.error("Error en el Brick de pago:", error);
-                        alert("Hubo un error al procesar el pago. Por favor, intenta de nuevo.");
                     },
                 },
             });
@@ -102,7 +108,7 @@ const CheckoutPage: React.FC = () => {
                 document.body.removeChild(existingScript);
             }
         }
-    }, [preferenceId, navigate, getTotalPrice]);
+    }, [preferenceId, navigate, getTotalPrice, items, shippingCost]);
 
     return (
         <div className="min-h-screen bg-gray-50 py-12">

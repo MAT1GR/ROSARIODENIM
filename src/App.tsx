@@ -13,6 +13,7 @@ import AdminPage from './pages/AdminPage';
 import CheckoutPage from './pages/CheckoutPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import ScrollToTop from './components/ScrollToTop';
+import AnnouncementBar from './components/AnnouncementBar';
 
 function App() {
   const auth = useAuthProvider();
@@ -23,6 +24,7 @@ function App() {
         <Router>
           <ScrollToTop />
           <div className="min-h-screen flex flex-col">
+            <AnnouncementBar />
             <Header />
             <main className="flex-1 fade-in">
               <Routes>

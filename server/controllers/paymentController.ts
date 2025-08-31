@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
+import { db } from '../../src/lib/database';
 import 'dotenv/config';
 
 const client = new MercadoPagoConfig({ 
@@ -62,20 +63,37 @@ export const createMercadoPagoPreference = async (req: Request, res: Response) =
     }
 };
 
-// --- NUEVA FUNCIÓN AÑADIDA ---
 export const processPayment = async (req: Request, res: Response) => {
     try {
-        const paymentData = req.body;
+        const { order, ...paymentData } = req.body;
         const payment = new Payment(client);
 
         console.log("Procesando pago con los siguientes datos:", paymentData);
         const result = await payment.create({ body: paymentData });
 
+        if (result.status === 'approved') {
+            const customerData = {
+                email: result.payer!.email!,
+                name: result.payer!.first_name || 'Comprador',
+                phone: result.payer!.phone?.number
+            };
+
+            const customerId = db.customers.findOrCreate(customerData);
+
+            db.orders.create({
+                id: result.id!.toString(),
+                customer: { id: customerId.toString(), ...customerData },
+                items: order.items,
+                total: result.transaction_amount!,
+                status: 'paid',
+                createdAt: new Date(result.date_created!),
+            });
+        }
+        
         res.status(201).json({
             message: 'Pago procesado con éxito',
             paymentId: result.id,
             status: result.status,
-            statusDetail: result.status_detail,
         });
 
     } catch (error: any) {

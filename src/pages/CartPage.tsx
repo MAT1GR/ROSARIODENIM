@@ -44,8 +44,15 @@ const CartPage: React.FC = () => {
       const data = await response.json();
 
       if (data.preferenceId) {
-        // Redirigir a nuestra página de checkout con el ID de la preferencia
-        navigate('/checkout', { state: { preferenceId: data.preferenceId } });
+        // --- CORRECCIÓN CLAVE ---
+        // Enviamos el contenido del carrito a la página de checkout.
+        navigate('/checkout', { 
+            state: { 
+                preferenceId: data.preferenceId,
+                items: cartItems,
+                shippingCost: shippingCost || 0
+            } 
+        });
       } else {
         throw new Error("No se recibió el ID de la preferencia de pago.");
       }

@@ -1,6 +1,8 @@
-import 'dotenv/config'; // <-- AÑADIR ESTA LÍNEA AL PRINCIPIO DE TODO
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path'; // <--- Añade esta línea
+import { fileURLToPath } from 'url'; // <--- Añade esta línea
 import authRoutes from './routes/auth';
 import productRoutes from './routes/products';
 import categoryRoutes from './routes/categories';
@@ -11,19 +13,23 @@ import dashboardRoutes from './routes/dashboard';
 import shippingRoutes from './routes/shipping';
 import paymentRoutes from './routes/payments';
 
-// --- VERIFICACIÓN CRUCIAL ---
-console.log("Verificando Access Token cargado:", process.env.MERCADOPAGO_ACCESS_TOKEN);
-// -------------------------
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// --- NUEVO: SERVIR ARCHIVOS ESTÁTICOS ---
+// Esto hace que la carpeta 'public' sea accesible y podamos ver las imágenes.
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 const PORT = 3001;
 
 // --- API Routes ---
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+// ... (resto de las rutas sin cambios)
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);

@@ -11,11 +11,13 @@ export default {
         'brand-button-bg-hover': '#b8a9a7',// Hover para los botones
         'brand-border': '#d1d1d1',        // Bordes de elementos inactivos
         'brand-pink': '#D8A7B1',           // Mantenemos el rosa para el botón "Comprar"
+        'brand-pink-dark': '#c69ba5',      // Nuevo color para el degradado
         'brand-light': '#F5F5F5',
         'brand-bg': '#FFFFFF',
       },
       fontFamily: {
         'roboto': ['Roboto', 'sans-serif'],
+        'poppins': ['Poppins', 'sans-serif'],
       },
     },
   },

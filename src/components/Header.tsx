@@ -23,7 +23,8 @@ const Header: React.FC = () => {
   const navLinks = [
     { href: '/', label: 'Inicio' },
     { href: '/tienda', label: 'Tienda' },
-    { href: '/tallas', label: 'Guía de Tallas' },
+    { href: '/nuestra-mision', label: 'Nuestra Misión' },
+    { href: '/preguntas-frecuentes', label: 'Preguntas' },
   ];
 
   return (
@@ -32,7 +33,7 @@ const Header: React.FC = () => {
         <div className="container mx-auto px-4 py-5">
           <div className="flex items-center justify-between">
             <Link to="/" className="text-2xl font-extrabold text-brand-dark tracking-tighter">
-              Rosario<span className="text-brand-pink">.</span>
+              <span className="text-brand-pink">DENIM</span> ROSARIO<span className="text-brand-pink">.</span>  
             </Link>
 
             <nav className="hidden md:flex items-center space-x-10">

@@ -32,14 +32,14 @@ const HomePage: React.FC = () => {
   return (
     <div className="bg-brand-bg">
       {/* --- HERO SECTION REDISEÑADO --- */}
-      <section className="container mx-auto px-4 pt-24 pb-16 md:pt-32 md:pb-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div className="text-center md:text-left fade-in-up">
+      <section className="container mx-auto px-4 pt-24 pb-16 md:min-h-screen md:flex md:items-center md:py-0">
+        <div className="w-full text-center">
+          <div className="fade-in-up">
             <h1 className="text-5xl lg:text-7xl font-black text-brand-primary-text leading-tight tracking-tighter">
               El calce perfecto <br/> <span className="text-brand-pink">existe.</span>
             </h1>
             {/* Descripción visible solo en md y pantallas más grandes */}
-            <p className="mt-6 text-lg text-brand-secondary-text max-w-md mx-auto md:mx-0 hidden md:block">
+            <p className="mt-6 text-lg text-brand-secondary-text max-w-md mx-auto hidden md:block">
               Descubrí jeans diseñados para durar y adaptarse a vos, no al revés. Calidad premium y estilo atemporal en cada prenda.
             </p>
             <Link
@@ -50,25 +50,22 @@ const HomePage: React.FC = () => {
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
-          <div className="relative fade-in-up hidden md:block" style={{ animationDelay: '0.2s' }}>
-            <div className="aspect-[4/5] bg-brand-pink/20 rounded-3xl">
-              <img 
-                src="https://images.pexels.com/photos/1082528/pexels-photo-1082528.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-                alt="Modelo usando jeans Rosario Denim con estilo"
-                className="absolute inset-5 w-[calc(100%-2.5rem)] h-[calc(100%-2.5rem)] object-cover rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          </div>
         </div>
       </section>
 
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 bg-gradient-to-b from-brand-pink to-brand-pink-dark text-white">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">Novedades</h2>
+        <div className="flex justify-between items-center mb-12">
+            <div>
+              <h2 className="text-3xl font-bold">Los Más Vendidos</h2>
+              <p className="text-white/80">Los favoritos de nuestra comunidad.</p>
+            </div>
+            <Link to="/tienda" className="font-bold hover:underline">Ver todo</Link>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {isLoading 
+            {isLoading
               ? Array.from({ length: 3 }).map((_, i) => <SkeletonProductCard key={i} />)
-              : newProducts.map(product => <ProductCard key={product.id} product={product} />)
+              : bestSellers.map(product => <ProductCard key={product.id} product={product} />)
             }
           </div>
         </div>
@@ -76,11 +73,17 @@ const HomePage: React.FC = () => {
 
       <section className="py-16 px-4 bg-brand-light">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">Los Más Vendidos</h2>
+          <div className="flex justify-between items-center mb-12">
+            <div>
+              <h2 className="text-3xl font-bold">Novedades</h2>
+              <p className="text-brand-secondary-text">Lo último en llegar a nuestra tienda.</p>
+            </div>
+            <Link to="/tienda" className="text-brand-pink font-bold hover:underline">Ver todo</Link>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {isLoading
+            {isLoading 
               ? Array.from({ length: 3 }).map((_, i) => <SkeletonProductCard key={i} />)
-              : bestSellers.map(product => <ProductCard key={product.id} product={product} />)
+              : newProducts.map(product => <ProductCard key={product.id} product={product} />)
             }
           </div>
         </div>

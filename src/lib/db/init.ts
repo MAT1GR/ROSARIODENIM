@@ -34,6 +34,9 @@ const createTables = (db: Database.Database) => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+    -- COMANDO DE OPTIMIZACIÓN --
+    CREATE INDEX IF NOT EXISTS idx_product_category ON products (category);
+
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT UNIQUE NOT NULL,
