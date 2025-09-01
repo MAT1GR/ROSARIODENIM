@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Plus, Minus, ArrowLeft, Truck } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react'; 
 import { useCart } from '../hooks/useCart.tsx';
 
 const CartPage: React.FC = () => {
@@ -17,6 +17,7 @@ const CartPage: React.FC = () => {
     e.preventDefault();
     if (!postalCode) return;
     setIsCalculating(true);
+    setShippingCost(null);
     try {
       const response = await fetch('/api/shipping/calculate', {
         method: 'POST',
@@ -27,7 +28,7 @@ const CartPage: React.FC = () => {
       setShippingCost(data.cost);
     } catch (error) {
       console.error("Error al calcular envío:", error);
-      alert("No se pudo calcular el costo de envío.");
+      alert("No se pudo calcular el costo de envío. Por favor, verifica el código postal e intenta de nuevo.");
     } finally {
       setIsCalculating(false);
     }
@@ -44,8 +45,6 @@ const CartPage: React.FC = () => {
       const data = await response.json();
 
       if (data.preferenceId) {
-        // --- CORRECCIÓN CLAVE ---
-        // Enviamos el contenido del carrito a la página de checkout.
         navigate('/checkout', { 
             state: { 
                 preferenceId: data.preferenceId,
@@ -81,6 +80,8 @@ const CartPage: React.FC = () => {
     );
   }
 
+  const isCheckoutEnabled = shippingCost !== null && !isProcessingPayment;
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
@@ -107,7 +108,7 @@ const CartPage: React.FC = () => {
                 {cartItems.map((item) => (
                 <div key={`${item.product.id}-${item.size}`} className="flex gap-4 py-4 border-b border-gray-200">
                     <img
-                    src={item.product.images[0]}
+                    src={`http://localhost:3001${item.product.images[0]}`}
                     alt={item.product.name}
                     className="w-24 h-32 object-cover rounded-lg"
                     />
@@ -152,51 +153,61 @@ const CartPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Resumen del Pedido */}
+          {/* Resumen del Pedido con nuevo estilo */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-28">
-                <h2 className="text-2xl font-bold mb-6 border-b pb-4">Resumen</h2>
+            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-28 border border-gray-200">
+                <h2 className="text-2xl font-bold mb-6 border-b pb-4 text-brand-dark">Resumen del Pedido</h2>
+                
                 <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Subtotal</span>
+                    <div className="flex justify-between items-center text-gray-700">
+                        <span>Subtotal</span>
                         <span className="font-medium">${total.toLocaleString('es-AR')}</span>
                     </div>
 
-                    {/* Calculador de Envío */}
-                    <div className="border-t pt-4">
-                        <form onSubmit={handleCalculateShipping} className="flex gap-2">
+                    <div className="flex flex-col space-y-2 border-t pt-4">
+                        <form onSubmit={handleCalculateShipping} className="flex gap-2 items-stretch">
                             <input
                                 type="text"
                                 value={postalCode}
                                 onChange={(e) => setPostalCode(e.target.value)}
-                                placeholder="Código Postal"
-                                className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#D8A7B1]"
+                                placeholder="Código Postal (ej: 2000)"
+                                className="flex-1 p-3 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D8A7B1] focus:border-transparent"
                             />
-                            <button type="submit" disabled={isCalculating} className="p-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-                                {isCalculating ? '...' : <Truck size={20} />}
+                            <button 
+                                type="submit" 
+                                disabled={isCalculating || !postalCode}
+                                className="px-4 py-3 bg-brand-button-bg text-white rounded-lg font-medium hover:bg-brand-button-bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm whitespace-nowrap"
+                            >
+                                {isCalculating ? 'Calculando...' : 'Calcular Envío'}
                             </button>
                         </form>
                         {shippingCost !== null && (
-                            <div className="flex justify-between items-center mt-2">
-                                <span className="text-gray-600">Costo de Envío</span>
-                                <span className="font-medium">${shippingCost.toLocaleString('es-AR')}</span>
+                            <div className="flex justify-between items-center mt-2 text-gray-700">
+                                <span className="text-sm">Costo de Envío</span>
+                                <span className="font-medium text-sm">${shippingCost.toLocaleString('es-AR')}</span>
+                            </div>
+                        )}
+                         {shippingCost === 0 && (
+                            <div className="flex justify-between items-center mt-2 text-gray-700">
+                                <span className="text-sm">Costo de Envío</span>
+                                <span className="font-medium text-green-600">¡Gratis!</span>
                             </div>
                         )}
                     </div>
                     
                     <div className="flex justify-between items-center text-xl font-bold border-t pt-4">
-                        <span>Total</span>
-                        <span className="text-2xl text-[#D8A7B1]">
+                        <span className="text-brand-dark">Total</span>
+                        <span className="text-2xl text-brand-pink">
                            ${(total + (shippingCost || 0)).toLocaleString('es-AR')}
                         </span>
                     </div>
                 </div>
                 <button 
                     onClick={handleCheckout}
-                    disabled={isProcessingPayment}
-                    className="w-full mt-6 bg-[#D8A7B1] hover:bg-[#c69ba5] text-white py-3 rounded-lg text-lg font-medium transition-colors disabled:opacity-50"
+                    disabled={!isCheckoutEnabled}
+                    className="w-full mt-6 bg-[#D8A7B1] hover:bg-[#c69ba5] text-white py-3 rounded-lg text-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {isProcessingPayment ? 'Procesando...' : 'Pagar con Mercado Pago'}
+                    Pagar con Mercado Pago
                 </button>
             </div>
           </div>

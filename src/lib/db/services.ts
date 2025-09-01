@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { dbConnection } from './connection';
 import { Product, AdminUser, Category, Order, Customer, SiteSettings } from '../../types';
 
-// --- Helpers (sin cambios) ---
+// --- Helpers ---
 const parseProduct = (row: any): Product => ({
   id: String(row.id),
   name: row.name,
@@ -32,9 +32,10 @@ const parseCategory = (row: any): Category => ({
 const parseOrder = (row: any): Order => ({
     id: row.id,
     customer: {
-        id: row.customer_id,
-        name: row.customer_name,
-        email: row.customer_email,
+      id: row.customer_id,
+      name: row.customer_name,
+      email: row.customer_email,
+      createdAt: undefined
     },
     items: JSON.parse(row.items),
     total: row.total,
@@ -42,6 +43,7 @@ const parseOrder = (row: any): Order => ({
     createdAt: new Date(row.created_at),
 });
 
+// CORRECCIÓN: Se añade la fecha de creación para el dashboard
 const parseCustomer = (row: any): Customer => ({
     id: row.id,
     name: row.name,
@@ -49,10 +51,11 @@ const parseCustomer = (row: any): Customer => ({
     phone: row.phone,
     order_count: row.order_count,
     total_spent: row.total_spent,
+    createdAt: new Date(row.created_at), // Esta línea es nueva
 });
 
 
-// --- Auth Services (sin cambios) ---
+// --- Auth Services ---
 export const authService = {
   authenticateAdmin: async (username: string, password: string): Promise<AdminUser | null> => {
     const user = dbConnection.prepare('SELECT * FROM admin_users WHERE username = ?').get(username) as AdminUser | undefined;
@@ -61,10 +64,22 @@ export const authService = {
       return userWithoutPassword as AdminUser;
     }
     return null;
+  },
+  
+  changeAdminPassword: async (username: string, oldPassword: string, newPassword: string): Promise<boolean> => {
+    const user = dbConnection.prepare('SELECT * FROM admin_users WHERE username = ?').get(username) as AdminUser | undefined;
+    
+    if (user && await bcrypt.compare(oldPassword, user.password)) {
+      const hashedNewPassword = bcrypt.hashSync(newPassword, 10);
+      dbConnection.prepare('UPDATE admin_users SET password = ? WHERE username = ?').run(hashedNewPassword, username);
+      return true;
+    }
+    
+    return false;
   }
 };
 
-// --- Product Services (ACTUALIZADO) ---
+// --- Product Services ---
 export const productService = {
   getAll: (filters: { category?: string; sortBy?: string; page?: number; limit?: number }) => {
     const { category, sortBy, page = 1, limit = 9 } = filters;
@@ -150,7 +165,6 @@ export const productService = {
   }
 };
 
-// ... (El resto de los servicios: categoryService, orderService, etc. se mantienen igual)
 export const categoryService = {
     getAll: (): Category[] => {
         const rows = dbConnection.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC').all();
@@ -190,6 +204,7 @@ export const categoryService = {
         return result.changes > 0;
     }
 };
+
 export const orderService = {
     create: (order: Order): number => {
         const result = dbConnection.prepare(`
@@ -215,6 +230,7 @@ export const orderService = {
         return result.changes > 0;
     }
 };
+
 export const customerService = {
     findOrCreate: (customer: { email: string; name: string; phone?: string }): number => {
         let existingCustomer = dbConnection.prepare('SELECT id FROM customers WHERE email = ?').get(customer.email) as { id: number } | undefined;
@@ -234,6 +250,7 @@ export const customerService = {
         return rows.map(parseCustomer);
     }
 };
+
 export const settingsService = {
     getAll: (): SiteSettings => {
         const rows = dbConnection.prepare('SELECT key, value FROM site_settings').all() as {key: string, value: string}[];
@@ -252,6 +269,7 @@ export const settingsService = {
         transaction(settings);
     }
 };
+
 export const dashboardService = {
     getStats: () => {
         const productCount = (dbConnection.prepare('SELECT COUNT(*) as count FROM products WHERE is_active = 1').get() as {count: number}).count;
@@ -266,5 +284,13 @@ export const dashboardService = {
             customerCount,
             totalRevenue,
         };
+    },
+    getRecentOrders: (limit: number = 5): Order[] => {
+        const rows = dbConnection.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT ?').all(limit);
+        return rows.map(parseOrder);
+    },
+    getRecentCustomers: (limit: number = 5): Customer[] => {
+        const rows = dbConnection.prepare('SELECT * FROM customers ORDER BY created_at DESC LIMIT ?').all(limit);
+        return rows.map(parseCustomer);
     }
 };

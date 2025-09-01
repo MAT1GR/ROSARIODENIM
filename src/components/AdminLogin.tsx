@@ -116,12 +116,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
             </button>
           </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Credenciales por defecto: <br />
-              <span className="font-mono bg-gray-100 px-2 py-1 rounded">admin / admin123</span>
-            </p>
-          </div>
+          
         </form>
       </div>
     </div>

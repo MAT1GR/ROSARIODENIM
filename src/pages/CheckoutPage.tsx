@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart.tsx';
+import { CartItem } from '../types';
 
 // Para que TypeScript reconozca el objeto `MercadoPago` y los Bricks
 declare global {
@@ -13,9 +14,7 @@ const CheckoutPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { getTotalPrice } = useCart();
-    // --- CORRECCIÓN CLAVE ---
-    // Obtenemos los items del estado de la navegación.
-    const { preferenceId, items, shippingCost } = location.state || {};
+    const { preferenceId, items, shippingCost } = location.state || {}; 
     const [isLoading, setIsLoading] = useState(true);
     
     const cardPaymentBrickController = useRef<any>(null);
@@ -58,8 +57,6 @@ const CheckoutPage: React.FC = () => {
                             const response = await fetch('/api/payments/process-payment', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                // --- CORRECCIÓN CLAVE ---
-                                // Enviamos los items y el costo de envío junto a los datos del pago.
                                 body: JSON.stringify({
                                     ...cardFormData,
                                     order: {
@@ -69,14 +66,25 @@ const CheckoutPage: React.FC = () => {
                                 }),
                             });
 
-                            const paymentResult = await response.json();
-
-                            if (!response.ok) {
-                                throw new Error(paymentResult.message || 'Error en el pago');
+                            if (response.ok) {
+                                const paymentResult = await response.json();
+                                if (paymentResult.status === 'approved') {
+                                    navigate('/payment-success', {
+                                        state: {
+                                            paymentId: paymentResult.paymentId,
+                                            items: items,
+                                            shippingCost: shippingCost,
+                                            total: getTotalPrice() + (shippingCost || 0)
+                                        }
+                                    });
+                                } else {
+                                    alert(`El pago fue ${paymentResult.status}. Por favor, inténtalo de nuevo.`);
+                                }
+                            } else {
+                                const errorData = await response.json();
+                                throw new Error(errorData.message || 'Error en el pago');
                             }
                             
-                            navigate('/payment-success');
-
                         } catch (error) {
                             console.error("Error al procesar el pago:", error);
                             alert("Hubo un error al procesar tu pago. Por favor, revisa los datos e intenta de nuevo.");

@@ -25,8 +25,9 @@ export interface Customer {
   email: string;
   name: string;
   phone?: string;
-  order_count?: number; // <-- AÑADIR ESTA LÍNEA
-  total_spent?: number; // <-- AÑADIR ESTA LÍNEA
+  order_count?: number;
+  total_spent?: number;
+  createdAt?: Date; // <-- CORRECCIÓN AQUÍ
 }
 
 export interface Order {

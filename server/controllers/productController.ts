@@ -67,8 +67,6 @@ export const createProduct = (req: Request, res: Response) => {
         const newProductData = req.body;
         const files = req.files as Express.Multer.File[];
         
-        // --- ¡CORRECCIÓN AQUÍ! ---
-        // Convertimos el string de talles de vuelta a un objeto
         if (newProductData.sizes && typeof newProductData.sizes === 'string') {
             newProductData.sizes = JSON.parse(newProductData.sizes);
         }
@@ -90,8 +88,6 @@ export const updateProduct = (req: Request, res: Response) => {
         const { existingImages, ...productData } = req.body;
         const files = req.files as Express.Multer.File[];
 
-        // --- ¡CORRECCIÓN AQUÍ! ---
-        // Hacemos lo mismo para la actualización
         if (productData.sizes && typeof productData.sizes === 'string') {
             productData.sizes = JSON.parse(productData.sizes);
         }

@@ -2,20 +2,21 @@ import { Request, Response } from 'express';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { db } from '../../src/lib/database';
 import 'dotenv/config';
+import { CartItem } from '../../src/types';
 
 const client = new MercadoPagoConfig({ 
     accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! 
 });
 
 export const createMercadoPagoPreference = async (req: Request, res: Response) => {
-    const { items, shippingCost } = req.body;
+    const { items, shippingCost } = req.body; // <-- CORRECCIÓN: Se eliminó 'customerDetails' de aquí.
 
     if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ message: 'La lista de productos es inválida.' });
     }
 
     try {
-        const preferenceItems = items.map((item: any) => ({
+        const preferenceItems = items.map((item: CartItem) => ({
             id: item.product.id,
             title: `${item.product.name} (Talle: ${item.size})`,
             quantity: item.quantity,
@@ -35,9 +36,10 @@ export const createMercadoPagoPreference = async (req: Request, res: Response) =
 
         const preferenceBody = {
             items: preferenceItems,
+            // Ahora se usan valores por defecto para crear la preferencia.
             payer: {
                 name: "Comprador",
-                surname: "RosarioDenim",
+                surname: "de Prueba",
                 email: "test_user_123456@testuser.com",
             },
             back_urls: {
@@ -88,13 +90,20 @@ export const processPayment = async (req: Request, res: Response) => {
                 status: 'paid',
                 createdAt: new Date(result.date_created!),
             });
+
+            res.status(201).json({
+                message: 'Pago procesado con éxito',
+                paymentId: result.id,
+                status: result.status,
+            });
+        } else {
+            res.status(402).json({
+                message: `El pago fue ${result.status}`,
+                paymentId: result.id,
+                status: result.status,
+            });
         }
         
-        res.status(201).json({
-            message: 'Pago procesado con éxito',
-            paymentId: result.id,
-            status: result.status,
-        });
 
     } catch (error: any) {
         console.error("Error al procesar el pago en el backend:", error.cause || error.message);

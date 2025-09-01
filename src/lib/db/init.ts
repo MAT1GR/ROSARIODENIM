@@ -1,9 +1,10 @@
 import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
+import { dbConnection } from './connection'; // Importa la conexión directa
 
-export const initializeDatabase = (db: Database.Database) => {
-  createTables(db);
-  seedInitialData(db);
+export const initializeDatabase = () => { // No es necesario pasar 'db' como argumento
+  createTables(dbConnection);
+  seedInitialData(dbConnection);
 };
 
 const createTables = (db: Database.Database) => {
@@ -79,10 +80,11 @@ const seedInitialData = (db: Database.Database) => {
     db.prepare(`
       INSERT INTO admin_users (username, password, email, role)
       VALUES (?, ?, ?, ?)
-    `).run('admin', hashedPassword, 'admin@rosariodenim.com', 'super_admin');
+    `)
+    
+    .run('grigomati@gmail.com', hashedPassword, 'admin@rosariodenim.com', 'super_admin'); 
     console.log('✅ Default admin user created.');
   }
-
   // Seed site settings
   const settingsExist = db.prepare('SELECT COUNT(*) as count FROM site_settings').get() as { count: number };
   if (settingsExist.count === 0) {
