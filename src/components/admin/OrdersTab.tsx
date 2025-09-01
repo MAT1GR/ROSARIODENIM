@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Order } from '../../types';
 import { ChevronDown, Package, Truck, CheckCircle, XCircle } from 'lucide-react';
+import { OrderDetailModal } from './OrderDetailModal';
 
 export const OrdersTab: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
     useEffect(() => {
         fetchOrders();
@@ -69,13 +71,14 @@ export const OrdersTab: React.FC = () => {
                             <tr><td colSpan={5} className="p-8 text-center text-gray-500">No hay pedidos para mostrar.</td></tr>
                         ) : orders.map((order) => {
                             const currentStatus = statusOptions.find(s => s.value === order.status) || statusOptions[0];
-                            const StatusIcon = currentStatus.icon;
                             return (
                                 <tr key={order.id} className="hover:bg-gray-50">
-                                    <td className="p-4 font-mono text-sm text-gray-700">#{order.id}</td>
+                                    <td className="p-4 font-mono text-sm text-gray-700">
+                                      <button onClick={() => setSelectedOrder(order)} className="text-blue-500 hover:underline font-medium">#{order.id}</button>
+                                    </td>
                                     <td className="p-4">
-                                        <div className="font-medium text-gray-800">{order.customer.name}</div>
-                                        <div className="text-sm text-gray-500">{order.customer.email}</div>
+                                        <div className="font-medium text-gray-800">{order.customerName}</div>
+                                        <div className="text-sm text-gray-500">{order.customerEmail}</div>
                                     </td>
                                     <td className="p-4 text-gray-600">{new Date(order.createdAt).toLocaleDateString('es-AR')}</td>
                                     <td className="p-4 font-medium text-gray-800">${order.total.toLocaleString('es-AR')}</td>
@@ -96,6 +99,7 @@ export const OrdersTab: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+            {selectedOrder && <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
         </div>
     );
 };

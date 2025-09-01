@@ -31,7 +31,7 @@ const RecentActivity: React.FC<{ orders: Order[], customers: Customer[] }> = ({ 
                 {orders.map(order => (
                     <div key={order.id} className="flex justify-between items-center text-sm">
                         <div>
-                            <p className="font-medium text-gray-800">{order.customer.name}</p>
+                            <p className="font-medium text-gray-800">{order.customerId.name}</p>
                             <p className="text-gray-500">{order.items.length} producto(s)</p>
                         </div>
                         <div className="text-right">

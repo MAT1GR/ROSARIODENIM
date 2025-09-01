@@ -1,9 +1,8 @@
-import { Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { db } from '../../src/lib/database';
 import 'dotenv/config';
 import { CartItem } from '../../src/types';
-import { Router } from 'express';
 
 const router = Router();
 
@@ -39,11 +38,9 @@ export const createMercadoPagoPreference = async (req: Request, res: Response) =
 
         const preferenceBody = {
             items: preferenceItems,
-            payer: {
-                name: "Comprador",
-                surname: "de Prueba",
-                email: "test_user_123456@testuser.com",
-            },
+            // Se elimina el objeto 'payer' codificado.
+            // Ahora Mercado Pago tomará los datos reales del cliente
+            // que se ingresen en el formulario de pago.
             back_urls: {
                 success: 'http://localhost:5173/payment-success',
                 failure: 'http://localhost:5173/carrito',
@@ -79,10 +76,12 @@ export const processPayment = async (req: Request, res: Response) => {
             const customerData = {
                 email: result.payer!.email!,
                 name: result.payer!.first_name || 'Comprador',
-                phone: result.payer!.phone?.number
+                phone: result.payer!.phone?.number,
+                totalSpent: result.transaction_amount! // Se extrae el monto total del pago
             };
 
             const customerId = db.customers.findOrCreate(customerData);
+            db.products.updateProductStock(order.items);
 
             db.orders.create({
                 id: result.id!.toString(),
@@ -105,8 +104,6 @@ export const processPayment = async (req: Request, res: Response) => {
                 status: result.status,
             });
         }
-        
-
     } catch (error: any) {
         console.error("Error al procesar el pago en el backend:", error.cause || error.message);
         

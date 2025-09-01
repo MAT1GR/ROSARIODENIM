@@ -27,12 +27,22 @@ export interface Customer {
   phone?: string;
   order_count?: number;
   total_spent?: number;
-  createdAt?: Date; // <-- CORRECCIÓN AQUÍ
+  createdAt?: Date;
+}
+
+export interface CustomerOrder {
+  id: string;
+  items: CartItem[];
+  total: number;
+  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  createdAt: Date;
 }
 
 export interface Order {
   id: string;
-  customer: Customer;
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
   items: CartItem[];
   total: number;
   status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';

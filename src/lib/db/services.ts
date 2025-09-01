@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { dbConnection } from './connection';
-import { Product, AdminUser, Category, Order, Customer, SiteSettings } from '../../types';
+import { Product, AdminUser, Category, Order, Customer, SiteSettings, CartItem, CustomerOrder } from '../../types';
 
 // --- Helpers ---
 const parseProduct = (row: any): Product => ({
@@ -30,28 +30,32 @@ const parseCategory = (row: any): Category => ({
 });
 
 const parseOrder = (row: any): Order => ({
-    id: row.id,
-    customer: {
-      id: row.customer_id,
-      name: row.customer_name,
-      email: row.customer_email,
-      createdAt: undefined
-    },
+    id: String(row.id),
+    customerId: String(row.customer_id),
+    customerName: row.customer_name,
+    customerEmail: row.customer_email,
     items: JSON.parse(row.items),
     total: row.total,
     status: row.status,
     createdAt: new Date(row.created_at),
 });
 
-// CORRECCIÓN: Se añade la fecha de creación para el dashboard
+const parseCustomerOrder = (row: any): CustomerOrder => ({
+    id: String(row.id),
+    items: JSON.parse(row.items),
+    total: row.total,
+    status: row.status,
+    createdAt: new Date(row.created_at),
+});
+
 const parseCustomer = (row: any): Customer => ({
-    id: row.id,
+    id: String(row.id),
     name: row.name,
     email: row.email,
     phone: row.phone,
     order_count: row.order_count,
     total_spent: row.total_spent,
-    createdAt: new Date(row.created_at), // Esta línea es nueva
+    createdAt: new Date(row.created_at),
 });
 
 
@@ -162,6 +166,25 @@ export const productService = {
   delete: (id: string): boolean => {
     const result = dbConnection.prepare('UPDATE products SET is_active = 0 WHERE id = ?').run(id);
     return result.changes > 0;
+  },
+
+  updateProductStock: (items: CartItem[]): void => {
+      const updateStmt = dbConnection.prepare('UPDATE products SET sizes = ? WHERE id = ?');
+      const getProductStmt = dbConnection.prepare('SELECT sizes FROM products WHERE id = ?');
+
+      const transaction = dbConnection.transaction((cartItems: CartItem[]) => {
+        for (const item of cartItems) {
+            const product = getProductStmt.get(item.product.id) as { sizes: string } | undefined;
+            if (product) {
+                const sizes = JSON.parse(product.sizes);
+                if (sizes[item.size]) {
+                    sizes[item.size].stock -= item.quantity;
+                    updateStmt.run(JSON.stringify(sizes), item.product.id);
+                }
+            }
+        }
+      });
+      transaction(items);
   }
 };
 
@@ -206,18 +229,19 @@ export const categoryService = {
 };
 
 export const orderService = {
-    create: (order: Order): number => {
+    create: (order: { id: string; customerId: string; customerName: string; customerEmail: string; items: CartItem[]; total: number; status: string; createdAt: Date }): number => {
         const result = dbConnection.prepare(`
-            INSERT INTO orders (id, customer_name, customer_email, items, total, status, created_at)
-            VALUES (@id, @customer_name, @customer_email, @items, @total, @status, @created_at)
+            INSERT INTO orders (id, customer_id, customer_name, customer_email, items, total, status, created_at)
+            VALUES (@id, @customerId, @customerName, @customerEmail, @items, @total, @status, @createdAt)
         `).run({
             id: order.id,
-            customer_name: order.customer.name,
-            customer_email: order.customer.email,
+            customerId: order.customerId,
+            customerName: order.customerName,
+            customerEmail: order.customerEmail,
             items: JSON.stringify(order.items),
             total: order.total,
             status: order.status,
-            created_at: order.createdAt.toISOString(),
+            createdAt: order.createdAt.toISOString(),
         });
         return result.lastInsertRowid as number;
     },
@@ -225,29 +249,41 @@ export const orderService = {
         const rows = dbConnection.prepare('SELECT * FROM orders ORDER BY created_at DESC').all();
         return rows.map(parseOrder);
     },
-    updateStatus: (id: number, status: string): boolean => {
+    updateStatus: (id: string, status: string): boolean => {
         const result = dbConnection.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, id);
         return result.changes > 0;
+    },
+    getByCustomerId: (customerId: string): CustomerOrder[] => {
+        const rows = dbConnection.prepare('SELECT id, items, total, status, created_at FROM orders WHERE customer_id = ? ORDER BY created_at DESC').all(customerId);
+        return rows.map(parseCustomerOrder);
+    },
+    getById: (id: string): Order | null => {
+        const row = dbConnection.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+        return row ? parseOrder(row) : null;
     }
 };
 
 export const customerService = {
-    findOrCreate: (customer: { email: string; name: string; phone?: string }): number => {
-        let existingCustomer = dbConnection.prepare('SELECT id FROM customers WHERE email = ?').get(customer.email) as { id: number } | undefined;
+    findOrCreate: (customer: { email: string; name: string; phone?: string; totalSpent: number }): number => {
+        let existingCustomer = dbConnection.prepare('SELECT id, total_spent FROM customers WHERE email = ?').get(customer.email) as { id: number; total_spent: number } | undefined;
 
         if (existingCustomer) {
-            dbConnection.prepare('UPDATE customers SET name = ?, phone = ?, order_count = order_count + 1 WHERE id = ?')
-                .run(customer.name, customer.phone || null, existingCustomer.id);
+            dbConnection.prepare('UPDATE customers SET name = ?, phone = ?, order_count = order_count + 1, total_spent = ? WHERE id = ?')
+                .run(customer.name, customer.phone || null, existingCustomer.total_spent + customer.totalSpent, existingCustomer.id);
             return existingCustomer.id;
         } else {
-            const result = dbConnection.prepare('INSERT INTO customers (name, email, phone, order_count) VALUES (?, ?, ?, 1)')
-                .run(customer.name, customer.email, customer.phone || null);
+            const result = dbConnection.prepare('INSERT INTO customers (name, email, phone, order_count, total_spent) VALUES (?, ?, ?, 1, ?)')
+                .run(customer.name, customer.email, customer.phone || null, customer.totalSpent);
             return result.lastInsertRowid as number;
         }
     },
     getAll: (): Customer[] => {
         const rows = dbConnection.prepare('SELECT * FROM customers ORDER BY created_at DESC').all();
         return rows.map(parseCustomer);
+    },
+    getById: (id: string): Customer | null => {
+      const row = dbConnection.prepare('SELECT * FROM customers WHERE id = ?').get(id);
+      return row ? parseCustomer(row) : null;
     }
 };
 

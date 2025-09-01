@@ -18,7 +18,8 @@ const PaymentSuccessPage: React.FC = () => {
     const getEstimatedDeliveryDate = () => {
         const date = new Date();
         date.setDate(date.getDate() + 7); // Envío en 4 a 7 días hábiles
-        const options = { weekday: 'long', month: 'long', day: 'numeric' };
+        // CORRECCIÓN: Se define el tipo de las opciones de forma explícita y correcta
+        const options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
         return date.toLocaleDateString('es-ES', options);
     };
 
@@ -82,6 +83,15 @@ const PaymentSuccessPage: React.FC = () => {
                         <p className="text-sm text-gray-500 mt-4">
                             Recibirás un email de confirmación con los detalles del envío y un número de seguimiento.
                         </p>
+                    </div>
+
+                    <div className="mt-8 text-center">
+                        <Link
+                            to="/tienda"
+                            className="inline-block bg-[#D8A7B1] hover:bg-[#c69ba5] text-white px-8 py-3 rounded-lg font-medium transition-colors"
+                        >
+                            Volver a la tienda
+                        </Link>
                     </div>
                 </div>
             </div>

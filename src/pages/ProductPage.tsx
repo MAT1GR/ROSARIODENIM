@@ -73,6 +73,18 @@ const ProductPage: React.FC = () => {
     fetchProductData();
   }, [id]);
 
+  // CORRECCIÓN: Restablecer la cantidad a 1 cuando cambia la talla
+  useEffect(() => {
+    if (product && selectedSize) {
+      const selectedSizeInfo = product.sizes[selectedSize];
+      if (selectedSizeInfo && selectedSizeInfo.stock > 0) {
+        setQuantity(1);
+      } else {
+        setQuantity(0);
+      }
+    }
+  }, [selectedSize, product]);
+
   useEffect(() => {
     if (product) {
       document.title = `${product.name} - ${selectedSize ? `Talle ${selectedSize}` : 'Rosario Denim'}`;
