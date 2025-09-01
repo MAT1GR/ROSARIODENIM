@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useCart } from '../hooks/useCart.tsx';
 import { CartItem } from '../types';
 
-// Para que TypeScript reconozca el objeto `MercadoPago` y los Bricks
 declare global {
     interface Window {
         MercadoPago: any;
@@ -13,20 +11,20 @@ declare global {
 const CheckoutPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { getTotalPrice } = useCart();
-    const { preferenceId, items, shippingCost } = location.state || {}; 
-    const [isLoading, setIsLoading] = useState(true);
     
-    const cardPaymentBrickController = useRef<any>(null);
+    const { preferenceId, items, shippingCost, total } = location.state || {}; 
+    const [isLoading, setIsLoading] = useState(true);
+    const [brickError, setBrickError] = useState<string | null>(null); // Estado para mostrar error al usuario
+    
+    const paymentBrickController = useRef<any>(null);
 
     useEffect(() => {
-        if (!preferenceId) {
+        if (!preferenceId || !total) {
             navigate('/carrito');
             return;
         }
 
         let isMounted = true;
-
         const script = document.createElement('script');
         script.src = 'https://sdk.mercadopago.com/js/v2';
         script.async = true;
@@ -42,9 +40,9 @@ const CheckoutPage: React.FC = () => {
 
             const bricksBuilder = mp.bricks();
 
-            cardPaymentBrickController.current = await bricksBuilder.create("cardPayment", "cardPaymentBrick_container", {
+            paymentBrickController.current = await bricksBuilder.create("payment", "paymentBrick_container", {
                 initialization: {
-                    amount: getTotalPrice(),
+                    amount: total,
                     preferenceId: preferenceId,
                 },
                 customization: {
@@ -52,46 +50,41 @@ const CheckoutPage: React.FC = () => {
                 },
                 callbacks: {
                     onReady: () => {},
-                    onSubmit: async (cardFormData: any) => {
+                    onSubmit: async (formData: any) => {
                         try {
                             const response = await fetch('/api/payments/process-payment', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
-                                    ...cardFormData,
-                                    order: {
-                                        items: items,
-                                        shippingCost: shippingCost
-                                    }
+                                    ...formData,
+                                    order: { items, shippingCost }
                                 }),
                             });
 
-                            if (response.ok) {
-                                const paymentResult = await response.json();
-                                if (paymentResult.status === 'approved') {
-                                    navigate('/payment-success', {
-                                        state: {
-                                            paymentId: paymentResult.paymentId,
-                                            items: items,
-                                            shippingCost: shippingCost,
-                                            total: getTotalPrice() + (shippingCost || 0)
-                                        }
-                                    });
-                                } else {
-                                    alert(`El pago fue ${paymentResult.status}. Por favor, inténtalo de nuevo.`);
-                                }
+                            const paymentResult = await response.json();
+                            if (response.ok && paymentResult.status === 'approved') {
+                                navigate('/payment-success', {
+                                    state: {
+                                        paymentId: paymentResult.paymentId,
+                                        items: items,
+                                        shippingCost: shippingCost || 0,
+                                        total: total
+                                    }
+                                });
                             } else {
-                                const errorData = await response.json();
-                                throw new Error(errorData.message || 'Error en el pago');
+                                throw new Error(paymentResult.message || `El pago fue ${paymentResult.status}.`);
                             }
-                            
-                        } catch (error) {
+                        } catch (error: any) {
                             console.error("Error al procesar el pago:", error);
-                            alert("Hubo un error al procesar tu pago. Por favor, revisa los datos e intenta de nuevo.");
+                            alert(`Hubo un error al procesar tu pago: ${error.message}`);
                         }
                     },
+                    // --- MODIFICACIÓN CLAVE PARA OBTENER MÁS DETALLES DEL ERROR ---
                     onError: (error: any) => {
-                        console.error("Error en el Brick de pago:", error);
+                        console.error("Error detallado del Brick de pago:", error);
+                        // Convertimos el objeto de error a un string para poder mostrarlo
+                        const errorDetails = JSON.stringify(error, null, 2);
+                        setBrickError(`No se pudo cargar el formulario de pago. Por favor, intenta de nuevo.\n\nDetalles: ${errorDetails}`);
                     },
                 },
             });
@@ -99,8 +92,10 @@ const CheckoutPage: React.FC = () => {
         
         script.onerror = () => {
             if (isMounted) {
-                console.error("No se pudo cargar el script de Mercado Pago.");
+                const errorMsg = "No se pudo cargar el script de Mercado Pago. Revisa tu conexión a internet o el bloqueador de anuncios.";
+                console.error(errorMsg);
                 setIsLoading(false);
+                setBrickError(errorMsg);
             }
         };
 
@@ -108,15 +103,15 @@ const CheckoutPage: React.FC = () => {
 
         return () => {
             isMounted = false;
-            if (cardPaymentBrickController.current) {
-                cardPaymentBrickController.current.unmount();
+            if (paymentBrickController.current?.unmount) {
+                paymentBrickController.current.unmount();
             }
             const existingScript = document.querySelector('script[src="https://sdk.mercadopago.com/js/v2"]');
             if (existingScript) {
                 document.body.removeChild(existingScript);
             }
         }
-    }, [preferenceId, navigate, getTotalPrice, items, shippingCost]);
+    }, [preferenceId, navigate, items, shippingCost, total]);
 
     return (
         <div className="min-h-screen bg-gray-50 py-12">
@@ -127,7 +122,16 @@ const CheckoutPage: React.FC = () => {
                     
                     {isLoading && <div className="text-center p-8">Cargando formulario de pago...</div>}
                     
-                    <div id="cardPaymentBrick_container"></div>
+                    {/* Contenedor para el Brick */}
+                    <div id="paymentBrick_container"></div>
+
+                    {/* Mostramos el error si existe */}
+                    {brickError && (
+                        <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg">
+                            <h3 className="font-bold">Error</h3>
+                            <pre className="whitespace-pre-wrap text-sm">{brickError}</pre>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

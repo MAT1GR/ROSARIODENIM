@@ -45,11 +45,13 @@ const CartPage: React.FC = () => {
       const data = await response.json();
 
       if (data.preferenceId) {
+        const finalTotal = total + (shippingCost || 0); // Calculamos el total final
         navigate('/checkout', { 
             state: { 
                 preferenceId: data.preferenceId,
                 items: cartItems,
-                shippingCost: shippingCost || 0
+                shippingCost: shippingCost || 0,
+                total: finalTotal // <-- AÑADIMOS EL TOTAL FINAL AQUÍ
             } 
         });
       } else {
