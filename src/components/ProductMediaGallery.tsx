@@ -1,94 +1,69 @@
-import React, { useState } from 'react';
-import { Product } from '../types';
-import { ChevronLeft, ChevronRight, PlayCircle, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
 interface ProductMediaGalleryProps {
-  product: Product;
+  images: string[];
 }
 
-const ProductMediaGallery: React.FC<ProductMediaGalleryProps> = ({ product }) => {
-  const allMedia = product.video 
-    ? [{ type: 'video', url: product.video }, ...product.images.map(url => ({ type: 'image', url }))]
-    : product.images.map(url => ({ type: 'image', url }));
+const ProductMediaGallery: React.FC<ProductMediaGalleryProps> = ({ images }) => {
+  const [selectedImage, setSelectedImage] = useState('');
 
-  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  // --- INICIO DE LA CORRECCIÓN DEFINITIVA ---
+  // Este useEffect se asegura de que solo se seleccione una imagen
+  // cuando el array 'images' realmente tenga contenido.
+  // Esto evita el error de intentar acceder a images[0] cuando aún está vacío.
+  useEffect(() => {
+    if (images && images.length > 0) {
+      setSelectedImage(images[0]);
+    }
+  }, [images]); // Se ejecuta cada vez que el array de imágenes cambia.
+  // --- FIN DE LA CORRECCIÓN DEFINITIVA ---
 
-  // --- COMIENZO DE LA CORRECCIÓN ---
-  // Si no hay medios, no se puede continuar.
-  if (allMedia.length === 0) {
+  // Si el array de imágenes está vacío o aún no ha cargado,
+  // muestra un placeholder claro.
+  if (!images || images.length === 0) {
     return (
-      <div className="w-full">
-        <div className="relative aspect-[4/5] bg-gray-200 flex items-center justify-center">
-          <ImageIcon size={48} className="text-gray-400" />
-        </div>
+      <div className="flex-1 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200 flex items-center justify-center">
+        <p className="text-gray-500">Imagen no disponible</p>
       </div>
     );
   }
-  // --- FIN DE LA CORRECCIÓN ---
 
-  const goToNext = () => {
-    setCurrentMediaIndex((prevIndex) => (prevIndex + 1) % allMedia.length);
-  };
-
-  const goToPrev = () => {
-    setCurrentMediaIndex((prevIndex) => (prevIndex - 1 + allMedia.length) % allMedia.length);
-  };
-
-  const currentMedia = allMedia[currentMediaIndex];
+  // Se mantiene la misma lógica de URL que funciona en ProductCard.
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) return '';
+    return `http://localhost:3001${imagePath}`;
+  }
 
   return (
-    <div className="w-full">
-      <div className="relative aspect-[4/5] bg-gray-200">
-        {currentMedia.type === 'video' ? (
-          <iframe 
-            src={currentMedia.url} 
-            title="Video del producto" 
-            frameBorder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowFullScreen 
-            className="w-full h-full object-cover"
-          ></iframe>
-        ) : (
-          <img 
-            src={`http://localhost:3001${currentMedia.url}`} 
-            alt={`${product.name} - Vista ${currentMediaIndex + 1}`} 
-            className="w-full h-full object-cover" 
+    <div className="flex flex-col-reverse md:flex-row gap-4">
+      {/* Miniaturas */}
+      <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-hidden">
+        {images.map((image, index) => (
+          <div
+            key={index}
+            className={`w-20 h-20 flex-shrink-0 rounded-md overflow-hidden cursor-pointer border-2 ${selectedImage === image ? 'border-brand-pink' : 'border-transparent'}`}
+            onClick={() => setSelectedImage(image)}
+          >
+            <img
+              src={getImageUrl(image)}
+              alt={`Miniatura del producto ${index + 1}`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Imagen Principal */}
+      <div className="flex-1 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200">
+        {/* Se asegura de que solo se intente mostrar la imagen si hay una seleccionada */}
+        {selectedImage && (
+          <img
+            src={getImageUrl(selectedImage)}
+            alt="Imagen principal del producto"
+            className="h-full w-full object-cover object-center"
           />
         )}
       </div>
-
-      {allMedia.length > 1 && (
-        <div className="px-4 sm:px-0 mt-2">
-            <div className="flex space-x-2 overflow-x-auto no-scrollbar py-2">
-            {allMedia.map((media, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentMediaIndex(index)}
-                className={`flex-shrink-0 w-20 h-20 border-2 rounded-md overflow-hidden relative ${
-                  index === currentMediaIndex ? 'border-brand-pink' : 'border-transparent'
-                } hover:border-brand-pink-hover transition-colors`}
-              >
-                {media.type === 'video' ? (
-                  <div className="relative w-full h-full bg-black flex items-center justify-center">
-                    <PlayCircle size={32} className="text-white opacity-75" />
-                  </div>
-                ) : (
-                  <img
-                    src={`http://localhost:3001${media.url}`}
-                    alt={`${product.name} - Miniatura ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-                {media.type === 'video' && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
-                    <PlayCircle size={24} className="text-white" />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

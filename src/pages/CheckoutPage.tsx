@@ -14,9 +14,10 @@ const CheckoutPage: React.FC = () => {
     
     const { preferenceId, items, shippingCost, total } = location.state || {}; 
     const [isLoading, setIsLoading] = useState(true);
-    const [brickError, setBrickError] = useState<string | null>(null); // Estado para mostrar error al usuario
+    const [brickError, setBrickError] = useState<string | null>(null);
     
     const paymentBrickController = useRef<any>(null);
+    const observerRef = useRef<MutationObserver | null>(null);
 
     useEffect(() => {
         if (!preferenceId || !total) {
@@ -34,9 +35,12 @@ const CheckoutPage: React.FC = () => {
             
             setIsLoading(false);
             
+            // --- INICIO DE LA CORRECCIÓN ---
+            // Volvemos al método original para cargar la clave de la API.
             const mp = new window.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY, {
                 locale: 'es-AR'
             });
+            // --- FIN DE LA CORRECCIÓN ---
 
             const bricksBuilder = mp.bricks();
 
@@ -46,10 +50,39 @@ const CheckoutPage: React.FC = () => {
                     preferenceId: preferenceId,
                 },
                 customization: {
-                    visual: { style: { theme: 'default' } }
+                    visual: { 
+                        style: { theme: 'default' },
+                    },
+                    paymentMethods: {
+                        ticket: "all",
+                        creditCard: "all",
+                        debitCard: "all",
+                        mercadoPago: "all",
+                    },
                 },
                 callbacks: {
-                    onReady: () => {},
+                    onReady: () => {
+                        const container = document.getElementById('paymentBrick_container');
+                        if (!container) return;
+
+                        const hidePanel = () => {
+                            const redirectPanel = container.querySelector('.mp-wallet-collapsable-content');
+                            if (redirectPanel && redirectPanel instanceof HTMLElement) {
+                               redirectPanel.style.display = 'none';
+                               if (observerRef.current) {
+                                   observerRef.current.disconnect(); 
+                               }
+                            }
+                        };
+                        
+                        const observer = new MutationObserver(() => {
+                            hidePanel();
+                        });
+
+                        observerRef.current = observer;
+                        observer.observe(container, { childList: true, subtree: true });
+                        hidePanel();
+                    },
                     onSubmit: async (formData: any) => {
                         try {
                             const response = await fetch('/api/payments/process-payment', {
@@ -79,10 +112,8 @@ const CheckoutPage: React.FC = () => {
                             alert(`Hubo un error al procesar tu pago: ${error.message}`);
                         }
                     },
-                    // --- MODIFICACIÓN CLAVE PARA OBTENER MÁS DETALLES DEL ERROR ---
                     onError: (error: any) => {
                         console.error("Error detallado del Brick de pago:", error);
-                        // Convertimos el objeto de error a un string para poder mostrarlo
                         const errorDetails = JSON.stringify(error, null, 2);
                         setBrickError(`No se pudo cargar el formulario de pago. Por favor, intenta de nuevo.\n\nDetalles: ${errorDetails}`);
                     },
@@ -103,6 +134,9 @@ const CheckoutPage: React.FC = () => {
 
         return () => {
             isMounted = false;
+            if (observerRef.current) {
+                observerRef.current.disconnect();
+            }
             if (paymentBrickController.current?.unmount) {
                 paymentBrickController.current.unmount();
             }
@@ -122,10 +156,8 @@ const CheckoutPage: React.FC = () => {
                     
                     {isLoading && <div className="text-center p-8">Cargando formulario de pago...</div>}
                     
-                    {/* Contenedor para el Brick */}
                     <div id="paymentBrick_container"></div>
 
-                    {/* Mostramos el error si existe */}
                     {brickError && (
                         <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg">
                             <h3 className="font-bold">Error</h3>
