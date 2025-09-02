@@ -134,7 +134,7 @@ const ProductPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-8 max-w-7xl mx-auto lg:px-8 lg:py-12">
         
         <div ref={galleryRef} className="lg:col-span-1 scroll-animate">
-          <ProductMediaGallery product={product} />
+          <ProductMediaGallery images={product.images} />
         </div>
 
         <div ref={detailsRef} className="w-full lg:col-span-1 lg:sticky lg:top-24 h-fit scroll-animate" style={{ animationDelay: '200ms' }}> 

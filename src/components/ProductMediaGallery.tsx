@@ -28,11 +28,12 @@ const ProductMediaGallery: React.FC<ProductMediaGalleryProps> = ({ images }) => 
     );
   }
 
-  // Se mantiene la misma lógica de URL que funciona en ProductCard.
   const getImageUrl = (imagePath: string) => {
-    if (!imagePath) return '';
-    return `http://localhost:3001${imagePath}`;
-  }
+  if (!imagePath) return '';
+  // Usamos la variable de entorno, igual que en las tarjetas
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+  return `${apiBaseUrl}${imagePath}`;
+}
 
   return (
     <div className="flex flex-col-reverse md:flex-row gap-4">
