@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react'; 
+import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
 import { useCart } from '../hooks/useCart.tsx';
+
+interface ShippingOption {
+  id: string;
+  name: string;
+  cost: number;
+}
 
 const CartPage: React.FC = () => {
   const { cartItems, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
@@ -9,7 +15,8 @@ const CartPage: React.FC = () => {
   const total = getTotalPrice();
 
   const [postalCode, setPostalCode] = useState('');
-  const [shippingCost, setShippingCost] = useState<number | null>(null);
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
@@ -17,7 +24,8 @@ const CartPage: React.FC = () => {
     e.preventDefault();
     if (!postalCode) return;
     setIsCalculating(true);
-    setShippingCost(null);
+    setShippingOptions([]);
+    setSelectedShipping(null);
     try {
       const response = await fetch('/api/shipping/calculate', {
         method: 'POST',
@@ -25,7 +33,25 @@ const CartPage: React.FC = () => {
         body: JSON.stringify({ postalCode }),
       });
       const data = await response.json();
-      setShippingCost(data.cost);
+      if (data.options && data.options.length > 0) {
+        setShippingOptions(data.options);
+        
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Buscamos si la opción 'cadete' está disponible.
+        const cadeteOption = data.options.find((option: ShippingOption) => option.id === 'cadete');
+
+        if (cadeteOption) {
+          // Si existe, la seleccionamos por defecto.
+          setSelectedShipping(cadeteOption);
+        } else {
+          // Si no, seleccionamos la más barata de las opciones disponibles.
+          const cheapestOption = data.options.reduce((prev: ShippingOption, current: ShippingOption) => 
+            prev.cost < current.cost ? prev : current
+          );
+          setSelectedShipping(cheapestOption);
+        }
+        // --- FIN DE LA MODIFICACIÓN ---
+      }
     } catch (error) {
       console.error("Error al calcular envío:", error);
       alert("No se pudo calcular el costo de envío. Por favor, verifica el código postal e intenta de nuevo.");
@@ -35,24 +61,28 @@ const CartPage: React.FC = () => {
   };
 
   const handleCheckout = async () => {
+    if (!selectedShipping) {
+      alert("Por favor, selecciona un método de envío.");
+      return;
+    }
     setIsProcessingPayment(true);
     try {
       const response = await fetch('/api/payments/create-mercadopago-preference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cartItems, shippingCost: shippingCost || 0 }),
+        body: JSON.stringify({ items: cartItems, shippingCost: selectedShipping.cost }),
       });
       const data = await response.json();
 
       if (data.preferenceId) {
-        const finalTotal = total + (shippingCost || 0); // Calculamos el total final
-        navigate('/checkout', { 
-            state: { 
+        const finalTotal = total + selectedShipping.cost;
+        navigate('/checkout', {
+            state: {
                 preferenceId: data.preferenceId,
                 items: cartItems,
-                shippingCost: shippingCost || 0,
-                total: finalTotal // <-- AÑADIMOS EL TOTAL FINAL AQUÍ
-            } 
+                shippingCost: selectedShipping.cost,
+                total: finalTotal
+            }
         });
       } else {
         throw new Error("No se recibió el ID de la preferencia de pago.");
@@ -82,7 +112,8 @@ const CartPage: React.FC = () => {
     );
   }
 
-  const isCheckoutEnabled = shippingCost !== null && !isProcessingPayment;
+  const isCheckoutEnabled = selectedShipping !== null && !isProcessingPayment;
+  const shippingCost = selectedShipping ? selectedShipping.cost : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -110,45 +141,45 @@ const CartPage: React.FC = () => {
                 {cartItems.map((item) => (
                 <div key={`${item.product.id}-${item.size}`} className="flex gap-4 py-4 border-b border-gray-200">
                     <img
-                    src={`http://localhost:3001${item.product.images[0]}`}
-                    alt={item.product.name}
-                    className="w-24 h-32 object-cover rounded-lg"
+                      src={`${import.meta.env.VITE_API_BASE_URL || ''}${item.product.images[0]}`}
+                      alt={item.product.name}
+                      className="w-24 h-32 object-cover rounded-lg"
                     />
                     <div className="flex-1">
-                    <div className="flex justify-between items-start mb-2">
-                        <div>
-                        <h3 className="font-medium text-lg">{item.product.name}</h3>
-                        <p className="text-gray-600">Talle: {item.size}</p>
-                        </div>
-                        <button
-                        onClick={() => removeFromCart(item.product.id, item.size)}
-                        className="text-red-600 hover:text-red-800 transition-colors p-1"
-                        >
-                        <Trash2 size={18} />
-                        </button>
-                    </div>
-                    <div className="flex justify-between items-center mt-4">
-                        <div className="flex items-center border rounded-lg">
-                        <button
-                            onClick={() => updateQuantity(item.product.id, item.size, item.quantity - 1)}
-                            className="p-2 text-gray-600 hover:text-[#D8A7B1] transition-colors"
-                        >
-                            <Minus size={16} />
-                        </button>
-                        <span className="px-4 py-1 border-x">{item.quantity}</span>
-                        <button
-                            onClick={() => updateQuantity(item.product.id, item.size, item.quantity + 1)}
-                            className="p-2 text-gray-600 hover:text-[#D8A7B1] transition-colors"
-                        >
-                            <Plus size={16} />
-                        </button>
-                        </div>
-                        <div className="text-right">
-                        <p className="font-bold text-lg">
-                            ${(item.product.price * item.quantity).toLocaleString('es-AR')}
-                        </p>
-                        </div>
-                    </div>
+                      <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-medium text-lg">{item.product.name}</h3>
+                            <p className="text-gray-600">Talle: {item.size}</p>
+                          </div>
+                          <button
+                            onClick={() => removeFromCart(item.product.id, item.size)}
+                            className="text-red-600 hover:text-red-800 transition-colors p-1"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                      </div>
+                      <div className="flex justify-between items-center mt-4">
+                          <div className="flex items-center border rounded-lg">
+                            <button
+                                onClick={() => updateQuantity(item.product.id, item.size, item.quantity - 1)}
+                                className="p-2 text-gray-600 hover:text-[#D8A7B1] transition-colors"
+                            >
+                                <Minus size={16} />
+                            </button>
+                            <span className="px-4 py-1 border-x">{item.quantity}</span>
+                            <button
+                                onClick={() => updateQuantity(item.product.id, item.size, item.quantity + 1)}
+                                className="p-2 text-gray-600 hover:text-[#D8A7B1] transition-colors"
+                            >
+                                <Plus size={16} />
+                            </button>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-lg">
+                                ${(item.product.price * item.quantity).toLocaleString('es-AR')}
+                            </p>
+                          </div>
+                      </div>
                     </div>
                 </div>
                 ))}
@@ -159,7 +190,7 @@ const CartPage: React.FC = () => {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-28 border border-gray-200">
                 <h2 className="text-2xl font-bold mb-6 border-b pb-4 text-brand-dark">Resumen del Pedido</h2>
-                
+
                 <div className="space-y-4">
                     <div className="flex justify-between items-center text-gray-700">
                         <span>Subtotal</span>
@@ -175,36 +206,44 @@ const CartPage: React.FC = () => {
                                 placeholder="Código Postal (ej: 2000)"
                                 className="flex-1 p-3 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D8A7B1] focus:border-transparent"
                             />
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 disabled={isCalculating || !postalCode}
                                 className="px-4 py-3 bg-brand-button-bg text-white rounded-lg font-medium hover:bg-brand-button-bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm whitespace-nowrap"
                             >
                                 {isCalculating ? 'Calculando...' : 'Calcular Envío'}
                             </button>
                         </form>
-                        {shippingCost !== null && (
-                            <div className="flex justify-between items-center mt-2 text-gray-700">
-                                <span className="text-sm">Costo de Envío</span>
-                                <span className="font-medium text-sm">${shippingCost.toLocaleString('es-AR')}</span>
-                            </div>
-                        )}
-                         {shippingCost === 0 && (
-                            <div className="flex justify-between items-center mt-2 text-gray-700">
-                                <span className="text-sm">Costo de Envío</span>
-                                <span className="font-medium text-green-600">¡Gratis!</span>
+                        {shippingOptions.length > 0 && (
+                            <div className="mt-2 space-y-2">
+                                {shippingOptions.map((option) => (
+                                    <label key={option.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer has-[:checked]:bg-pink-50 has-[:checked]:border-brand-pink">
+                                        <div className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="shippingOption"
+                                                value={option.id}
+                                                checked={selectedShipping?.id === option.id}
+                                                onChange={() => setSelectedShipping(option)}
+                                                className="h-4 w-4 text-brand-pink focus:ring-brand-pink"
+                                            />
+                                            <span className="ml-3 text-sm text-gray-700">{option.name}</span>
+                                        </div>
+                                        <span className="font-medium text-sm">${option.cost.toLocaleString('es-AR')}</span>
+                                    </label>
+                                ))}
                             </div>
                         )}
                     </div>
-                    
+
                     <div className="flex justify-between items-center text-xl font-bold border-t pt-4">
                         <span className="text-brand-dark">Total</span>
                         <span className="text-2xl text-brand-pink">
-                           ${(total + (shippingCost || 0)).toLocaleString('es-AR')}
+                           ${(total + shippingCost).toLocaleString('es-AR')}
                         </span>
                     </div>
                 </div>
-                <button 
+                <button
                     onClick={handleCheckout}
                     disabled={!isCheckoutEnabled}
                     className="w-full mt-6 bg-[#D8A7B1] hover:bg-[#c69ba5] text-white py-3 rounded-lg text-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
