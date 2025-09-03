@@ -50,7 +50,7 @@ const createMercadoPagoPreference = async (req: Request, res: Response) => {
                 failure: 'http://localhost:5173/carrito',
                 pending: 'http://localhost:5173/carrito',
             },
-            auto_return: "approved",
+            // --- CORRECCIÓN AQUÍ: Se elimina auto_return y se confía en back_urls ---
         };
 
         const preference = new Preference(client);
