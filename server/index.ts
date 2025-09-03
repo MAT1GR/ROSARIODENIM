@@ -1,3 +1,5 @@
+// Archivo: server/index.ts
+
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -11,7 +13,10 @@ import customerRoutes from './routes/customers';
 import settingsRoutes from './routes/settings';
 import dashboardRoutes from './routes/dashboard';
 import shippingRoutes from './routes/shipping';
-import paymentRoutes from './routes/payments'; // Importación correcta del default export
+
+// --- ESTA ES LA LÍNEA QUE ARREGLA TODO ---
+// Apuntamos al controlador correcto en lugar de la ruta vieja
+import paymentRoutes from './controllers/paymentController'; 
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,7 +38,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/shipping', shippingRoutes);
-app.use('/api/payments', paymentRoutes); // Uso correcto del router importado
+app.use('/api/payments', paymentRoutes); // Esta línea ahora usará el archivo correcto
 
 app.listen(PORT, () => {
   console.log(`🚀 Server listening on http://localhost:${PORT}`);

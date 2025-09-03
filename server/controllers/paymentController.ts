@@ -1,3 +1,5 @@
+// Archivo: server/controllers/paymentController.ts
+
 import { Request, Response, Router } from 'express';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { db } from '../../src/lib/database';
@@ -10,7 +12,7 @@ const client = new MercadoPagoConfig({
     accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!
 });
 
-export const createMercadoPagoPreference = async (req: Request, res: Response) => {
+const createMercadoPagoPreference = async (req: Request, res: Response) => {
     const { items, shippingCost, payerInfo } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -35,53 +37,39 @@ export const createMercadoPagoPreference = async (req: Request, res: Response) =
                 currency_id: 'ARS',
             });
         }
-
+        
         const preferenceBody = {
             items: preferenceItems,
             payer: {
                 name: payerInfo.firstName,
                 surname: payerInfo.lastName,
                 email: payerInfo.email,
-                phone: {
-                    area_code: '54', // Asumimos Argentina, puedes hacerlo dinámico si es necesario
-                    number: payerInfo.phone,
-                },
-                identification: {
-                    type: 'DNI', // Puedes adaptarlo si necesitas CUIL/CUIT
-                    number: payerInfo.docNumber,
-                },
-                address: {
-                    street_name: payerInfo.streetName,
-                    street_number: parseInt(payerInfo.streetNumber, 10),
-                    zip_code: payerInfo.postalCode,
-                }
             },
             back_urls: {
                 success: 'http://localhost:5173/payment-success',
                 failure: 'http://localhost:5173/carrito',
                 pending: 'http://localhost:5173/carrito',
             },
+            auto_return: "approved",
         };
 
         const preference = new Preference(client);
         const result = await preference.create({ body: preferenceBody });
-
         res.json({ preferenceId: result.id });
 
     } catch (error: any) {
-        console.error("Error al crear la preferencia de Mercado Pago:", error.cause || error.message);
+        console.error("Error al crear la preferencia:", error.cause || error.message);
         res.status(500).json({
-            message: 'Error interno del servidor al crear la preferencia de pago.',
-            error: error.cause || error.message
+            message: 'Error interno del servidor al crear la preferencia.',
+            error: error.cause ? JSON.stringify(error.cause) : error.message
         });
     }
 };
 
-export const processPayment = async (req: Request, res: Response) => {
+const processPayment = async (req: Request, res: Response) => {
     try {
         const { order, ...paymentData } = req.body;
         const payment = new Payment(client);
-
         const result = await payment.create({ body: paymentData });
 
         if (result.status === 'approved') {
@@ -94,11 +82,8 @@ export const processPayment = async (req: Request, res: Response) => {
 
             const customerId = db.customers.findOrCreate(customerData);
             db.products.updateProductStock(order.items);
-
             const shippingInfo: any = result.additional_info?.shipments?.receiver_address;
-            const shippingAddress = shippingInfo
-                ? `${shippingInfo.street_name || ''} ${shippingInfo.street_number || ''}`.trim()
-                : 'No especificada';
+            const shippingAddress = shippingInfo ? `${shippingInfo.street_name || ''} ${shippingInfo.street_number || ''}`.trim() : 'No especificada';
 
             db.orders.create({
                 id: result.id!.toString(),
@@ -115,25 +100,14 @@ export const processPayment = async (req: Request, res: Response) => {
                 createdAt: new Date(result.date_created!),
             });
 
-            res.status(201).json({
-                message: 'Pago procesado con éxito',
-                paymentId: result.id,
-                status: result.status,
-            });
+            res.status(201).json({ message: 'Pago procesado con éxito', paymentId: result.id, status: result.status });
         } else {
-            res.status(402).json({
-                message: `El pago fue ${result.status}`,
-                paymentId: result.id,
-                status: result.status,
-            });
+            res.status(402).json({ message: `El pago fue ${result.status}`, paymentId: result.id, status: result.status });
         }
     } catch (error: any) {
         console.error("Error al procesar el pago en el backend:", error.cause || error.message);
         const errorMessage = error.cause?.message || error.message || 'Error desconocido al procesar el pago.';
-        res.status(500).json({
-            message: 'Error al procesar el pago.',
-            error: errorMessage
-        });
+        res.status(500).json({ message: 'Error al procesar el pago.', error: errorMessage });
     }
 };
 
