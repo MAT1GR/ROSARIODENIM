@@ -84,6 +84,10 @@ export const processPayment = async (req: Request, res: Response) => {
                 total: result.transaction_amount!,
                 status: 'paid',
                 createdAt: new Date(result.date_created!),
+                shipping_address: '',
+                shipping_city: '',
+                shipping_postal_code: '',
+                shipping_cost: 0
             });
 
             res.status(201).json({

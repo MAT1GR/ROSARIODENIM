@@ -36,21 +36,16 @@ const CartPage: React.FC = () => {
       if (data.options && data.options.length > 0) {
         setShippingOptions(data.options);
         
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Buscamos si la opción 'cadete' está disponible.
         const cadeteOption = data.options.find((option: ShippingOption) => option.id === 'cadete');
 
         if (cadeteOption) {
-          // Si existe, la seleccionamos por defecto.
           setSelectedShipping(cadeteOption);
         } else {
-          // Si no, seleccionamos la más barata de las opciones disponibles.
           const cheapestOption = data.options.reduce((prev: ShippingOption, current: ShippingOption) => 
             prev.cost < current.cost ? prev : current
           );
           setSelectedShipping(cheapestOption);
         }
-        // --- FIN DE LA MODIFICACIÓN ---
       }
     } catch (error) {
       console.error("Error al calcular envío:", error);
@@ -60,39 +55,22 @@ const CartPage: React.FC = () => {
     }
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!selectedShipping) {
       alert("Por favor, selecciona un método de envío.");
       return;
     }
-    setIsProcessingPayment(true);
-    try {
-      const response = await fetch('/api/payments/create-mercadopago-preference', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cartItems, shippingCost: selectedShipping.cost }),
-      });
-      const data = await response.json();
 
-      if (data.preferenceId) {
-        const finalTotal = total + selectedShipping.cost;
-        navigate('/checkout', {
-            state: {
-                preferenceId: data.preferenceId,
-                items: cartItems,
-                shippingCost: selectedShipping.cost,
-                total: finalTotal
-            }
-        });
-      } else {
-        throw new Error("No se recibió el ID de la preferencia de pago.");
-      }
-    } catch (error) {
-      console.error("Error al procesar el pago:", error);
-      alert("Hubo un problema al iniciar el proceso de pago.");
-    } finally {
-        setIsProcessingPayment(false);
-    }
+    const finalTotal = total + selectedShipping.cost;
+
+    // Navegamos a /shipping con toda la info necesaria
+    navigate('/shipping', {
+      state: {
+        cartItems: cartItems,
+        selectedShipping: selectedShipping,
+        total: finalTotal,
+      },
+    });
   };
 
   if (cartItems.length === 0) {
@@ -126,7 +104,6 @@ const CartPage: React.FC = () => {
           Continuar comprando
         </Link>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Items del Carrito */}
           <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">Tu Carrito</h1>
@@ -185,8 +162,6 @@ const CartPage: React.FC = () => {
                 ))}
             </div>
           </div>
-
-          {/* Resumen del Pedido con nuevo estilo */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-28 border border-gray-200">
                 <h2 className="text-2xl font-bold mb-6 border-b pb-4 text-brand-dark">Resumen del Pedido</h2>
@@ -248,7 +223,7 @@ const CartPage: React.FC = () => {
                     disabled={!isCheckoutEnabled}
                     className="w-full mt-6 bg-[#D8A7B1] hover:bg-[#c69ba5] text-white py-3 rounded-lg text-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Pagar con Mercado Pago
+                    Continuar
                 </button>
             </div>
           </div>

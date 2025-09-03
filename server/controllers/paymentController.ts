@@ -6,12 +6,12 @@ import { CartItem } from '../../src/types';
 
 const router = Router();
 
-const client = new MercadoPagoConfig({ 
-    accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! 
+const client = new MercadoPagoConfig({
+    accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!
 });
 
 export const createMercadoPagoPreference = async (req: Request, res: Response) => {
-    const { items, shippingCost } = req.body;
+    const { items, shippingCost, payerInfo } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ message: 'La lista de productos es inválida.' });
@@ -25,7 +25,7 @@ export const createMercadoPagoPreference = async (req: Request, res: Response) =
             unit_price: item.product.price,
             currency_id: 'ARS',
         }));
-        
+
         if (shippingCost > 0) {
             preferenceItems.push({
                 id: 'shipping',
@@ -38,9 +38,24 @@ export const createMercadoPagoPreference = async (req: Request, res: Response) =
 
         const preferenceBody = {
             items: preferenceItems,
-            // Eliminamos el objeto 'payer' codificado.
-            // Ahora Mercado Pago tomará los datos reales del cliente
-            // que se ingresen en el formulario de pago.
+            payer: {
+                name: payerInfo.firstName,
+                surname: payerInfo.lastName,
+                email: payerInfo.email,
+                phone: {
+                    area_code: '54', // Asumimos Argentina, puedes hacerlo dinámico si es necesario
+                    number: payerInfo.phone,
+                },
+                identification: {
+                    type: 'DNI', // Puedes adaptarlo si necesitas CUIL/CUIT
+                    number: payerInfo.docNumber,
+                },
+                address: {
+                    street_name: payerInfo.streetName,
+                    street_number: parseInt(payerInfo.streetNumber, 10),
+                    zip_code: payerInfo.postalCode,
+                }
+            },
             back_urls: {
                 success: 'http://localhost:5173/payment-success',
                 failure: 'http://localhost:5173/carrito',
@@ -50,14 +65,12 @@ export const createMercadoPagoPreference = async (req: Request, res: Response) =
 
         const preference = new Preference(client);
         const result = await preference.create({ body: preferenceBody });
-        
+
         res.json({ preferenceId: result.id });
 
     } catch (error: any) {
-        console.error("Error al crear la preferencia de Mercado Pago:");
-        console.error(error.cause || error.message); 
-        
-        res.status(500).json({ 
+        console.error("Error al crear la preferencia de Mercado Pago:", error.cause || error.message);
+        res.status(500).json({
             message: 'Error interno del servidor al crear la preferencia de pago.',
             error: error.cause || error.message
         });
@@ -69,19 +82,23 @@ export const processPayment = async (req: Request, res: Response) => {
         const { order, ...paymentData } = req.body;
         const payment = new Payment(client);
 
-        console.log("Procesando pago con los siguientes datos:", paymentData);
         const result = await payment.create({ body: paymentData });
 
         if (result.status === 'approved') {
             const customerData = {
                 email: result.payer!.email!,
-                name: result.payer!.first_name || 'Comprador',
+                name: `${result.payer!.first_name || ''} ${result.payer!.last_name || ''}`.trim(),
                 phone: result.payer!.phone?.number,
-                totalSpent: result.transaction_amount! // Se extrae el monto total del pago
+                totalSpent: result.transaction_amount!
             };
 
             const customerId = db.customers.findOrCreate(customerData);
             db.products.updateProductStock(order.items);
+
+            const shippingInfo: any = result.additional_info?.shipments?.receiver_address;
+            const shippingAddress = shippingInfo
+                ? `${shippingInfo.street_name || ''} ${shippingInfo.street_number || ''}`.trim()
+                : 'No especificada';
 
             db.orders.create({
                 id: result.id!.toString(),
@@ -91,6 +108,10 @@ export const processPayment = async (req: Request, res: Response) => {
                 items: order.items,
                 total: result.transaction_amount!,
                 status: 'paid',
+                shipping_address: shippingAddress,
+                shipping_city: shippingInfo?.city_name || 'No especificada',
+                shipping_postal_code: shippingInfo?.zip_code || 'N/A',
+                shipping_cost: order.shippingCost || 0,
                 createdAt: new Date(result.date_created!),
             });
 
@@ -108,7 +129,6 @@ export const processPayment = async (req: Request, res: Response) => {
         }
     } catch (error: any) {
         console.error("Error al procesar el pago en el backend:", error.cause || error.message);
-        
         const errorMessage = error.cause?.message || error.message || 'Error desconocido al procesar el pago.';
         res.status(500).json({
             message: 'Error al procesar el pago.',
@@ -118,6 +138,6 @@ export const processPayment = async (req: Request, res: Response) => {
 };
 
 router.post('/create-mercadopago-preference', createMercadoPagoPreference);
-router.post('/process-payment', processPayment); 
+router.post('/process-payment', processPayment);
 
 export default router;

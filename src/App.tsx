@@ -19,6 +19,7 @@ import WhatsAppButton from './components/WhatsAppButton';
 import ReturnsPolicyPage from './pages/ReturnsPolicyPage';
 import FAQPage from './pages/FAQPage';
 import NuestraMisionPage from './pages/NuestraMisionPage';
+import ShippingPage from './pages/ShippingPage.tsx';
 
 // Componente interno para manejar la animación por cambio de ruta
 const AnimatedRoutes = () => {
@@ -30,6 +31,7 @@ const AnimatedRoutes = () => {
         <Route path="/tienda" element={<ShopPage />} />
         <Route path="/producto/:id" element={<ProductPage />} />
         <Route path="/carrito" element={<CartPage />} />
+        <Route path="/shipping" element={<ShippingPage />} />
         <Route path="/tallas" element={<SizeGuidePage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />

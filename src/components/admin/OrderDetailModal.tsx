@@ -1,6 +1,6 @@
 import React from 'react';
 import { Order } from '../../types';
-import { X, Calendar, DollarSign, Package, User } from 'lucide-react';
+import { X, Calendar, DollarSign, Package, User, MapPin } from 'lucide-react';
 
 interface OrderDetailModalProps {
   order: Order;
@@ -36,7 +36,18 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
               <p className="font-medium">{new Date(order.createdAt).toLocaleDateString('es-AR')}</p>
             </div>
           </div>
-          
+
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2 text-gray-600 mb-2"><MapPin size={18} /> Dirección de Envío</div>
+            <p className="font-medium">{order.shipping_address || 'No disponible'}</p>
+            <p className="text-sm text-gray-500">
+              {order.shipping_city || 'No disponible'} ({order.shipping_postal_code || 'N/A'})
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              Costo de envío: <strong>${(order.shipping_cost || 0).toLocaleString('es-AR')}</strong>
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-2 text-gray-600 mb-2"><DollarSign size={18} /> Total</div>
@@ -55,7 +66,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
             <div className="space-y-4 max-h-60 overflow-y-auto">
               {order.items.map((item, index) => (
                 <div key={index} className="flex gap-4 items-center">
-                  <img src={`http://localhost:3001${item.product.images[0]}`} alt={item.product.name} className="w-16 h-16 object-cover rounded-lg" />
+                  <img src={`${import.meta.env.VITE_API_BASE_URL || ''}${item.product.images[0]}`} alt={item.product.name} className="w-16 h-16 object-cover rounded-lg" />
                   <div className="flex-1">
                     <p className="font-medium">{item.product.name}</p>
                     <p className="text-sm text-gray-600">Talle: {item.size} &middot; Cantidad: {item.quantity}</p>

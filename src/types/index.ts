@@ -46,6 +46,10 @@ export interface Order {
   items: CartItem[];
   total: number;
   status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  shipping_address?: string;
+  shipping_city?: string;
+  shipping_postal_code?: string;
+  shipping_cost?: number;
   createdAt: Date;
 }
 

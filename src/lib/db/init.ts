@@ -48,12 +48,17 @@ const createTables = (db: Database.Database) => {
       sort_order INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS orders (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
+        customer_id TEXT NOT NULL,
         customer_name TEXT NOT NULL,
         customer_email TEXT NOT NULL,
         items TEXT NOT NULL,
         total INTEGER NOT NULL,
         status TEXT DEFAULT 'pending',
+        shipping_address TEXT,
+        shipping_city TEXT,
+        shipping_postal_code TEXT,
+        shipping_cost INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS customers (
@@ -81,8 +86,8 @@ const seedInitialData = (db: Database.Database) => {
       INSERT INTO admin_users (username, password, email, role)
       VALUES (?, ?, ?, ?)
     `)
-    
-    .run('grigomati@gmail.com', hashedPassword, 'admin@rosariodenim.com', 'super_admin'); 
+
+    .run('grigomati@gmail.com', hashedPassword, 'admin@rosariodenim.com', 'super_admin');
     console.log('✅ Default admin user created.');
   }
   // Seed site settings
