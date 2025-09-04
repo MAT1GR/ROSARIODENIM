@@ -13,10 +13,13 @@ const client = new MercadoPagoConfig({
 });
 
 const createMercadoPagoPreference = async (req: Request, res: Response) => {
-    const { items, shippingCost, payerInfo } = req.body;
+    const { items, shippingCost, shippingInfo } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ message: 'La lista de productos es inválida.' });
+    }
+     if (!shippingInfo) {
+        return res.status(400).json({ message: 'La información de envío es requerida.' });
     }
 
     try {
@@ -41,16 +44,15 @@ const createMercadoPagoPreference = async (req: Request, res: Response) => {
         const preferenceBody = {
             items: preferenceItems,
             payer: {
-                name: payerInfo.firstName,
-                surname: payerInfo.lastName,
-                email: payerInfo.email,
+                name: shippingInfo.firstName,
+                surname: shippingInfo.lastName,
+                email: "test_user_123456@testuser.com",
             },
             back_urls: {
                 success: 'http://localhost:5173/payment-success',
                 failure: 'http://localhost:5173/carrito',
                 pending: 'http://localhost:5173/carrito',
             },
-            // --- CORRECCIÓN AQUÍ: Se elimina auto_return y se confía en back_urls ---
         };
 
         const preference = new Preference(client);
@@ -82,8 +84,8 @@ const processPayment = async (req: Request, res: Response) => {
 
             const customerId = db.customers.findOrCreate(customerData);
             db.products.updateProductStock(order.items);
-            const shippingInfo: any = result.additional_info?.shipments?.receiver_address;
-            const shippingAddress = shippingInfo ? `${shippingInfo.street_name || ''} ${shippingInfo.street_number || ''}`.trim() : 'No especificada';
+            const shippingAddressData: any = result.additional_info?.shipments?.receiver_address;
+            const shippingAddress = shippingAddressData ? `${shippingAddressData.street_name || ''} ${shippingAddressData.street_number || ''}`.trim() : 'No especificada';
 
             db.orders.create({
                 id: result.id!.toString(),
@@ -94,8 +96,8 @@ const processPayment = async (req: Request, res: Response) => {
                 total: result.transaction_amount!,
                 status: 'paid',
                 shipping_address: shippingAddress,
-                shipping_city: shippingInfo?.city_name || 'No especificada',
-                shipping_postal_code: shippingInfo?.zip_code || 'N/A',
+                shipping_city: shippingAddressData?.city_name || 'No especificada',
+                shipping_postal_code: shippingAddressData?.zip_code || 'N/A',
                 shipping_cost: order.shippingCost || 0,
                 createdAt: new Date(result.date_created!),
             });
