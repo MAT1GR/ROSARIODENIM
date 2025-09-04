@@ -43,13 +43,19 @@ export interface Order {
   customerId: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
+  customerDocNumber?: string;
   items: CartItem[];
   total: number;
   status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
-  shipping_address?: string;
-  shipping_city?: string;
-  shipping_postal_code?: string;
-  shipping_cost?: number;
+  shippingStreetName?: string;
+  shippingStreetNumber?: string;
+  shippingApartment?: string;
+  shippingDescription?: string;
+  shippingCity?: string;
+  shippingPostalCode?: string;
+  shippingProvince?: string;
+  shippingCost?: number;
   createdAt: Date;
 }
 

@@ -7,22 +7,17 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  // --- INICIO DE LA CORRECCIÓN ---
-  // Obtenemos la URL base de la API desde las variables de entorno para que funcione en cualquier dispositivo.
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''; 
-  
-  // Construimos la URL completa de la imagen.
   const imageUrl = product.images && product.images[0] 
     ? `${apiBaseUrl}${product.images[0]}` 
     : 'https://via.placeholder.com/400x500';
-  // --- FIN DE LA CORRECCIÓN ---
 
   return (
     <Link to={`/producto/${product.id}`} className="group block">
       <div className="bg-white rounded-lg overflow-hidden border border-gray-200 group-hover:shadow-lg group-hover:border-brand-pink transition-all duration-300">
         <div className="aspect-[3/4] relative overflow-hidden">
           <img
-            src={imageUrl} // Usamos la URL construida dinámicamente
+            src={imageUrl}
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-in-out"
             loading="lazy"

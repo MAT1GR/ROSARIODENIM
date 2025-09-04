@@ -1,4 +1,3 @@
-import { dbConnection } from './db/connection';
 import { initializeDatabase } from './db/init';
 import { 
     authService, 
@@ -10,7 +9,7 @@ import {
     dashboardService
 } from './db/services';
 
-initializeDatabase(dbConnection);
+initializeDatabase();
 
 export const db = {
   auth: authService,
@@ -21,3 +20,4 @@ export const db = {
   settings: settingsService,
   dashboard: dashboardService,
 };
+

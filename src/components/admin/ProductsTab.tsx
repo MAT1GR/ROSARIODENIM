@@ -34,9 +34,6 @@ export const ProductsTab: React.FC = () => {
     const url = editingProduct ? `/api/products/${editingProduct.id}` : '/api/products';
 
     try {
-      // --- ¡CORRECCIÓN CLAVE! ---
-      // Al enviar FormData, NO debemos especificar el Content-Type.
-      // El navegador lo hace automáticamente.
       const response = await fetch(url, {
         method,
         body: data,
@@ -106,7 +103,7 @@ export const ProductsTab: React.FC = () => {
               return (
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="p-4 flex items-center gap-3">
-                    <img src={`http://localhost:3001${product.images[0]}`} alt={product.name} className="w-12 h-12 object-cover rounded" />
+                    <img src={`${import.meta.env.VITE_API_BASE_URL || ''}${product.images[0]}`} alt={product.name} className="w-12 h-12 object-cover rounded" />
                     <span className="font-medium text-gray-800">{product.name}</span>
                   </td>
                   <td className="p-4 text-gray-700">${product.price.toLocaleString('es-AR')}</td>

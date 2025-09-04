@@ -39,11 +39,7 @@ const ProductPage: React.FC = () => {
       if (!id) return;
       setIsLoading(true);
       try {
-        const [productRes, allProductsRes] = await Promise.all([
-          fetch(`/api/products/${id}`),
-          fetch('/api/products/all')
-        ]);
-
+        const productRes = await fetch(`/api/products/${id}`);
         if (productRes.ok) {
             const productData = await productRes.json();
             setProduct(productData);
@@ -55,11 +51,11 @@ const ProductPage: React.FC = () => {
                 setSelectedSize('');
             }
 
+            const allProductsRes = await fetch('/api/products/all');
             if (allProductsRes.ok) {
                 const allProducts = await allProductsRes.json();
                 setRelatedProducts(allProducts.filter((p: Product) => p.id !== productData.id));
             }
-
         } else {
             setProduct(null);
         }
@@ -73,7 +69,6 @@ const ProductPage: React.FC = () => {
     fetchProductData();
   }, [id]);
 
-  // CORRECCIÓN: Restablecer la cantidad a 1 cuando cambia la talla
   useEffect(() => {
     if (product && selectedSize) {
       const selectedSizeInfo = product.sizes[selectedSize];
@@ -84,12 +79,6 @@ const ProductPage: React.FC = () => {
       }
     }
   }, [selectedSize, product]);
-
-  useEffect(() => {
-    if (product) {
-      document.title = `${product.name} - ${selectedSize ? `Talle ${selectedSize}` : 'Rosario Denim'}`;
-    }
-  }, [product, selectedSize]);
 
   const handleAddToCart = () => {
     if (product && selectedSize && isInStock) {
@@ -132,27 +121,22 @@ const ProductPage: React.FC = () => {
   return (
     <div className="bg-brand-bg">
       <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-8 max-w-7xl mx-auto lg:px-8 lg:py-12">
-        
         <div ref={galleryRef} className="lg:col-span-1 scroll-animate">
           <ProductMediaGallery images={product.images} />
         </div>
-
         <div ref={detailsRef} className="w-full lg:col-span-1 lg:sticky lg:top-24 h-fit scroll-animate" style={{ animationDelay: '200ms' }}> 
           <div className="px-4 sm:px-6 lg:px-0 py-8 lg:py-0">
             <Breadcrumbs product={product} />
-            <h1 className="text-3xl font-black text-brand-primary-text tracking-wide uppercase">
-              {product.name}
-            </h1>
+            <h1 className="text-3xl font-black text-brand-primary-text tracking-wide uppercase">{product.name}</h1>
             <p className="text-2xl font-bold text-brand-primary-text mt-2">${product.price.toLocaleString('es-AR')}</p>
             {selectedSize && <p className="text-md font-medium text-brand-secondary-text mt-2">Talle: {selectedSize}</p>}
-
 
             <div className="mt-8">
               <div className="flex justify-between items-center mb-2">
                 <p className="text-sm font-medium text-brand-primary-text">Elegí tu talle:</p>
                 <Link to="/tallas" className="flex items-center gap-1 text-sm text-[#D8A7B1] hover:underline font-semibold">
                   <HelpCircle size={16} />
-                  ¿No sabes tu talle?
+                  Guía de talles completa
                 </Link>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -215,15 +199,43 @@ const ProductPage: React.FC = () => {
                 </button>
             </div>
 
+            {/* --- INICIO DE LA MEJORA: TABLA DE MEDIDAS VISIBLE --- */}
+            <div className="mt-8 border-t pt-6">
+              <h3 className="font-bold text-lg text-brand-primary-text mb-4">Guía de Tallas (en cm)</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left text-gray-500">
+                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-4 py-3">Talle</th>
+                      <th scope="col" className="px-4 py-3">Medidas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(product.sizes).map(([size, details]) => (
+                       details.available && details.stock > 0 && (
+                        <tr key={size} className="border-b">
+                          <th scope="row" className="px-4 py-3 font-medium text-gray-900">{size}</th>
+                          <td className="px-4 py-3">{details.measurements || 'No especificado'}</td>
+                        </tr>
+                       )
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            {/* --- FIN DE LA MEJORA --- */}
+
+            {/* --- INICIO DE LA MEJORA: CARACTERÍSTICAS ESPECIALIZADAS --- */}
             <div className="mt-8 border-t pt-6">
               <h3 className="font-bold text-lg text-brand-primary-text mb-4">Características</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Feature icon={Feather} label="Tela" value={product.material} />
-                  <Feature icon={Move} label="Calce" value={product.fit} />
-                  <Feature icon={TrendingUp} label="Tiro" value={product.rise} />
+                  <Feature icon={Feather} label="Tela" value={`Denim rígido de 14 onzas`} />
+                  <Feature icon={Move} label="Calce" value={`Mom fit con pierna cónica`} />
+                  <Feature icon={TrendingUp} label="Tiro" value={`Alto, 28cm desde la entrepierna`} />
                   {selectedSizeInfo && <Feature icon={Ruler} label={`Medidas Talle ${selectedSize}`} value={selectedSizeInfo.measurements} />}
               </div>
             </div>
+             {/* --- FIN DE LA MEJORA --- */}
             
             <div className="mt-6 p-3 bg-brand-light rounded-sm items-start gap-3 text-xs text-brand-secondary-text flex">
                 <Info size={20} className="flex-shrink-0 mt-0.5" />

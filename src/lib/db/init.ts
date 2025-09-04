@@ -1,13 +1,13 @@
-import Database from 'better-sqlite3';
+import type { Database } from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
-import { dbConnection } from './connection'; // Importa la conexión directa
+import { dbConnection } from './connection';
 
-export const initializeDatabase = () => { // No es necesario pasar 'db' como argumento
+export const initializeDatabase = () => {
   createTables(dbConnection);
   seedInitialData(dbConnection);
 };
 
-const createTables = (db: Database.Database) => {
+const createTables = (db: Database) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS admin_users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +35,6 @@ const createTables = (db: Database.Database) => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
-    -- COMANDO DE OPTIMIZACIÓN --
     CREATE INDEX IF NOT EXISTS idx_product_category ON products (category);
 
     CREATE TABLE IF NOT EXISTS categories (
@@ -52,12 +51,18 @@ const createTables = (db: Database.Database) => {
         customer_id TEXT NOT NULL,
         customer_name TEXT NOT NULL,
         customer_email TEXT NOT NULL,
+        customer_phone TEXT,
+        customer_doc_number TEXT,
         items TEXT NOT NULL,
         total INTEGER NOT NULL,
         status TEXT DEFAULT 'pending',
-        shipping_address TEXT,
+        shipping_street_name TEXT,
+        shipping_street_number TEXT,
+        shipping_apartment TEXT,
+        shipping_description TEXT,
         shipping_city TEXT,
         shipping_postal_code TEXT,
+        shipping_province TEXT,
         shipping_cost INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -77,8 +82,7 @@ const createTables = (db: Database.Database) => {
   `);
 };
 
-const seedInitialData = (db: Database.Database) => {
-  // Seed admin user
+const seedInitialData = (db: Database) => {
   const adminExists = db.prepare('SELECT COUNT(*) as count FROM admin_users').get() as { count: number };
   if (adminExists.count === 0) {
     const hashedPassword = bcrypt.hashSync('admin123', 10);
@@ -86,11 +90,9 @@ const seedInitialData = (db: Database.Database) => {
       INSERT INTO admin_users (username, password, email, role)
       VALUES (?, ?, ?, ?)
     `)
-
     .run('grigomati@gmail.com', hashedPassword, 'admin@rosariodenim.com', 'super_admin');
     console.log('✅ Default admin user created.');
   }
-  // Seed site settings
   const settingsExist = db.prepare('SELECT COUNT(*) as count FROM site_settings').get() as { count: number };
   if (settingsExist.count === 0) {
       const stmt = db.prepare('INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)');
@@ -100,3 +102,4 @@ const seedInitialData = (db: Database.Database) => {
       console.log('✅ Default site settings created.');
   }
 };
+

@@ -34,16 +34,19 @@ const parseOrder = (row: any): Order => ({
     customerId: String(row.customer_id),
     customerName: row.customer_name,
     customerEmail: row.customer_email,
+    customerPhone: row.customer_phone,
+    customerDocNumber: row.customer_doc_number,
     items: JSON.parse(row.items),
     total: row.total,
     status: row.status,
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Aseguramos que los nuevos campos se lean desde la base de datos
-    shipping_address: row.shipping_address,
-    shipping_city: row.shipping_city,
-    shipping_postal_code: row.shipping_postal_code,
-    shipping_cost: row.shipping_cost,
-    // --- FIN DE LA MODIFICACIÓN ---
+    shippingStreetName: row.shipping_street_name,
+    shippingStreetNumber: row.shipping_street_number,
+    shippingApartment: row.shipping_apartment,
+    shippingDescription: row.shipping_description,
+    shippingCity: row.shipping_city,
+    shippingPostalCode: row.shipping_postal_code,
+    shippingProvince: row.shipping_province,
+    shippingCost: row.shipping_cost,
     createdAt: new Date(row.created_at),
 });
 
@@ -66,8 +69,6 @@ const parseCustomer = (row: any): Customer => ({
 });
 
 
-// --- Auth Services ---
-// (Sin cambios en esta sección)
 export const authService = {
   authenticateAdmin: async (username: string, password: string): Promise<AdminUser | null> => {
     const user = dbConnection.prepare('SELECT * FROM admin_users WHERE username = ?').get(username) as AdminUser | undefined;
@@ -91,8 +92,6 @@ export const authService = {
   }
 };
 
-// --- Product Services ---
-// (Sin cambios en esta sección)
 export const productService = {
   getAll: (filters: { category?: string; sortBy?: string; page?: number; limit?: number }) => {
     const { category, sortBy, page = 1, limit = 9 } = filters;
@@ -197,8 +196,6 @@ export const productService = {
   }
 };
 
-// --- Category Services ---
-// (Sin cambios en esta sección)
 export const categoryService = {
     getAll: (): Category[] => {
         const rows = dbConnection.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC').all();
@@ -240,44 +237,19 @@ export const categoryService = {
 };
 
 export const orderService = {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // 1. Actualizamos el tipo del parámetro para que acepte los nuevos campos de envío.
-    create: (order: {
-        id: string;
-        customerId: string;
-        customerName: string;
-        customerEmail: string;
-        items: CartItem[];
-        total: number;
-        status: string;
-        shipping_address: string;
-        shipping_city: string;
-        shipping_postal_code: string;
-        shipping_cost: number;
-        createdAt: Date;
-    }): number => {
-        // 2. Actualizamos la consulta SQL para insertar los nuevos campos.
+    create: (order: Omit<Order, 'customerId'> & { customerId: string }): number => {
         const result = dbConnection.prepare(`
-            INSERT INTO orders (id, customer_id, customer_name, customer_email, items, total, status, created_at, shipping_address, shipping_city, shipping_postal_code, shipping_cost)
-            VALUES (@id, @customerId, @customerName, @customerEmail, @items, @total, @status, @createdAt, @shipping_address, @shipping_city, @shipping_postal_code, @shipping_cost)
+            INSERT INTO orders (id, customer_id, customer_name, customer_email, customer_phone, customer_doc_number, items, total, status, created_at, 
+                                shipping_street_name, shipping_street_number, shipping_apartment, shipping_description, shipping_city, shipping_postal_code, shipping_province, shipping_cost)
+            VALUES (@id, @customerId, @customerName, @customerEmail, @customerPhone, @customerDocNumber, @items, @total, @status, @createdAt,
+                    @shippingStreetName, @shippingStreetNumber, @shippingApartment, @shippingDescription, @shippingCity, @shippingPostalCode, @shippingProvince, @shippingCost)
         `).run({
-            id: order.id,
-            customerId: order.customerId,
-            customerName: order.customerName,
-            customerEmail: order.customerEmail,
+            ...order,
             items: JSON.stringify(order.items),
-            total: order.total,
-            status: order.status,
             createdAt: order.createdAt.toISOString(),
-            // 3. Pasamos los nuevos valores para ser insertados.
-            shipping_address: order.shipping_address,
-            shipping_city: order.shipping_city,
-            shipping_postal_code: order.shipping_postal_code,
-            shipping_cost: order.shipping_cost,
         });
         return result.lastInsertRowid as number;
     },
-    // --- FIN DE LA MODIFICACIÓN ---
     getAll: (): Order[] => {
         const rows = dbConnection.prepare('SELECT * FROM orders ORDER BY created_at DESC').all();
         return rows.map(parseOrder);
@@ -296,8 +268,6 @@ export const orderService = {
     }
 };
 
-// --- Customer Services ---
-// (Sin cambios en esta sección)
 export const customerService = {
     findOrCreate: (customer: { email: string; name: string; phone?: string; totalSpent: number }): number => {
         let existingCustomer = dbConnection.prepare('SELECT id, total_spent FROM customers WHERE email = ?').get(customer.email) as { id: number; total_spent: number } | undefined;
@@ -322,8 +292,6 @@ export const customerService = {
     }
 };
 
-// --- Settings Services ---
-// (Sin cambios en esta sección)
 export const settingsService = {
     getAll: (): SiteSettings => {
         const rows = dbConnection.prepare('SELECT key, value FROM site_settings').all() as {key: string, value: string}[];
@@ -343,8 +311,6 @@ export const settingsService = {
     }
 };
 
-// --- Dashboard Services ---
-// (Sin cambios en esta sección)
 export const dashboardService = {
     getStats: () => {
         const productCount = (dbConnection.prepare('SELECT COUNT(*) as count FROM products WHERE is_active = 1').get() as {count: number}).count;
@@ -369,3 +335,4 @@ export const dashboardService = {
         return rows.map(parseCustomer);
     }
 };
+
