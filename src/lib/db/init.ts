@@ -46,6 +46,8 @@ const createTables = (db: Database) => {
       is_active BOOLEAN DEFAULT 1,
       sort_order INTEGER DEFAULT 0
     );
+    
+    -- Tabla de Órdenes con la estructura correcta (snake_case)
     CREATE TABLE IF NOT EXISTS orders (
         id TEXT PRIMARY KEY,
         customer_id TEXT NOT NULL,
@@ -66,6 +68,7 @@ const createTables = (db: Database) => {
         shipping_cost INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
     CREATE TABLE IF NOT EXISTS customers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,

@@ -1,5 +1,3 @@
-// Archivo: src/pages/CheckoutPage.tsx
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -13,17 +11,16 @@ const CheckoutPage: React.FC = () => {
 
   const { cartItems, selectedShipping, total, shippingInfo } = location.state || {};
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const paymentBrickController = useRef<any>(null);
 
-  // Validación de datos mínimos
   useEffect(() => {
     if (!total || !shippingInfo) {
       navigate('/carrito');
     }
   }, [total, shippingInfo, navigate]);
 
-  // Carga SDK y monta Payment Brick
   useEffect(() => {
     if (total == null) return;
 
@@ -45,9 +42,6 @@ const CheckoutPage: React.FC = () => {
           },
           customization: {
             visual: { style: { theme: 'default' } },
-            // --- INICIO DE LA CORRECCIÓN DEFINITIVA ---
-            // Habilitamos explícitamente todos los métodos de pago.
-            // Esto soluciona el error "No payment type was selected".
             paymentMethods: {
               ticket: "all",
               bankTransfer: "all",
@@ -55,11 +49,12 @@ const CheckoutPage: React.FC = () => {
               debitCard: "all",
               mercadoPago: "all",
             },
-            // --- FIN DE LA CORRECCIÓN DEFINITIVA ---
           },
           callbacks: {
             onReady: () => setIsLoading(false),
             onSubmit: async (formData: any) => {
+              setIsProcessing(true);
+              setError(null);
               try {
                 const response = await fetch('/api/payments/process-payment', {
                   method: 'POST',
@@ -69,14 +64,15 @@ const CheckoutPage: React.FC = () => {
                     order: {
                       items: cartItems,
                       shippingCost: selectedShipping?.cost,
-                      shippingInfo: shippingInfo 
+                      shippingInfo: shippingInfo,
+                      total: total
                     },
                   }),
                 });
 
                 const paymentResult = await response.json();
                 if (!response.ok) {
-                  throw new Error(paymentResult.message || 'El pago fue rechazado.');
+                  throw new Error(paymentResult.error || 'El pago fue rechazado.');
                 }
 
                 if (paymentResult.status === 'approved') {
@@ -94,6 +90,8 @@ const CheckoutPage: React.FC = () => {
                 }
               } catch (err: any) {
                 setError(err.message || 'No se pudo procesar el pago. Por favor, verifica tus datos e intenta de nuevo.');
+              } finally {
+                setIsProcessing(false);
               }
             },
             onError: (error: any) => {
@@ -125,7 +123,8 @@ const CheckoutPage: React.FC = () => {
         <div className="bg-white p-8 rounded-lg shadow-md">
           <h1 className="text-2xl font-bold text-center mb-6">Completa tu pago</h1>
           {isLoading && <div className="text-center p-8">Cargando formulario de pago...</div>}
-          <div id="paymentBrick_container"></div>
+          <div id="paymentBrick_container" className={`${isProcessing ? 'opacity-50' : ''}`}></div>
+          {isProcessing && <div className="text-center p-8">Procesando pago...</div>}
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
               <strong>Error:</strong> {error}
