@@ -6,10 +6,10 @@ const ShippingPage: React.FC = () => {
   const location = useLocation();
   const { cartItems, selectedShipping, total } = location.state || {};
 
-  // Estado inicial con todos los nuevos campos
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    email: '', // <-- CAMBIO: Añadimos el campo email
     phone: '',
     docNumber: '',
     streetName: '',
@@ -32,7 +32,7 @@ const ShippingPage: React.FC = () => {
         cartItems,
         selectedShipping,
         total,
-        shippingInfo: formData, // Pasamos el objeto completo con todos los datos
+        shippingInfo: formData,
       },
     });
   };
@@ -48,17 +48,22 @@ const ShippingPage: React.FC = () => {
         <div className="bg-white p-8 rounded-lg shadow-md">
           <h1 className="text-2xl font-bold text-center mb-8">Información de Envío</h1>
           <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Datos del Destinatario */}
             <fieldset className="space-y-4 rounded-lg border p-4">
               <legend className="-ml-1 px-1 text-lg font-medium">Datos del destinatario</legend>
-              <InputField name="firstName" label="Nombre" value={formData.firstName} onChange={handleChange} required />
-              <InputField name="lastName" label="Apellido" value={formData.lastName} onChange={handleChange} required />
-              <InputField name="phone" label="Teléfono" type="tel" value={formData.phone} onChange={handleChange} required />
-              <InputField name="docNumber" label="Número de DNI / CUIL / CUIT" value={formData.docNumber} onChange={handleChange} required />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <InputField name="firstName" label="Nombre" value={formData.firstName} onChange={handleChange} required />
+                <InputField name="lastName" label="Apellido" value={formData.lastName} onChange={handleChange} required />
+              </div>
+              {/* --- INICIO DEL CAMBIO --- */}
+              <InputField name="email" label="Email de contacto" type="email" value={formData.email} onChange={handleChange} required />
+              {/* --- FIN DEL CAMBIO --- */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <InputField name="phone" label="Teléfono" type="tel" value={formData.phone} onChange={handleChange} required />
+                <InputField name="docNumber" label="DNI / CUIL / CUIT" value={formData.docNumber} onChange={handleChange} required />
+              </div>
             </fieldset>
 
-            {/* Datos de Domicilio */}
+            {/* (El resto del formulario no cambia) */}
             <fieldset className="space-y-4 rounded-lg border p-4">
               <legend className="-ml-1 px-1 text-lg font-medium">Datos de domicilio</legend>
               <div className="grid grid-cols-3 gap-4">
@@ -75,7 +80,7 @@ const ShippingPage: React.FC = () => {
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  rows={3}
+                  rows={2}
                   placeholder="Ej: Entre calles, color de la puerta, etc."
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-[#D8A7B1] focus:border-[#D8A7B1]"
                 />
@@ -102,7 +107,6 @@ const ShippingPage: React.FC = () => {
   );
 };
 
-// Componente auxiliar reutilizable para los campos de input
 const InputField = (props: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) => (
   <div>
     <label htmlFor={props.name} className="block text-sm font-medium text-gray-700 mb-1">{props.label}</label>

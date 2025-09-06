@@ -1,7 +1,10 @@
+// Archivo: server/controllers/paymentController.ts
+
 import { Request, Response, Router } from 'express';
-import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { db } from '../../src/lib/database';
 import 'dotenv/config';
+import { CartItem } from '../../src/types';
 
 const router = Router();
 
@@ -9,64 +12,99 @@ const client = new MercadoPagoConfig({
     accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!
 });
 
-const processPayment = async (req: Request, res: Response) => {
-    try {
-        const { order, ...formData } = req.body;
-        const { shippingInfo, items, shippingCost, total } = order;
-            
-        const paymentPayload = {
-            transaction_amount: Number(total),
-            token: formData.token,
-            description: `Orden de compra de ${shippingInfo.firstName} ${shippingInfo.lastName}`,
-            installments: formData.installments,
-            payment_method_id: formData.payment_method_id,
-            issuer_id: formData.issuer_id,
-            payer: {
-                email: shippingInfo.email,
-                first_name: shippingInfo.firstName,
-                last_name: shippingInfo.lastName,
-                identification: {
-                    type: "DNI",
-                    number: shippingInfo.docNumber
-                }
-            }
-        };
+const createMercadoPagoPreference = async (req: Request, res: Response) => {
+    const { items, shippingCost, shippingInfo } = req.body;
 
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ message: 'La lista de productos es inválida.' });
+    }
+
+    try {
+        const preferenceItems = items.map((item: CartItem) => ({
+            id: item.product.id,
+            title: `${item.product.name} (Talle: ${item.size})`,
+            quantity: item.quantity,
+            unit_price: item.product.price,
+            currency_id: 'ARS',
+        }));
+
+        if (shippingCost > 0) {
+            preferenceItems.push({
+                id: 'shipping',
+                title: 'Costo de Envío',
+                quantity: 1,
+                unit_price: shippingCost,
+                currency_id: 'ARS',
+            });
+        }
+        
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Se eliminó la línea "auto_return: 'approved'" para evitar el conflicto.
+        const preferenceBody = {
+            items: preferenceItems,
+            payer: {
+                name: shippingInfo.firstName,
+                surname: shippingInfo.lastName,
+                email: shippingInfo.email,
+            },
+            back_urls: {
+                success: 'http://localhost:5173/payment-success',
+                failure: 'http://localhost:5173/carrito',
+                pending: 'http://localhost:5173/carrito',
+            },
+        };
+        // --- FIN DE LA CORRECCIÓN ---
+
+        const preference = new Preference(client);
+        const result = await preference.create({ body: preferenceBody });
+        res.json({ preferenceId: result.id });
+
+    } catch (error: any) {
+        console.error("Error al crear la preferencia:", error.cause || error.message);
+        res.status(500).json({
+            message: 'Error interno del servidor al crear la preferencia.',
+            error: error.cause ? JSON.stringify(error.cause) : error.message
+        });
+    }
+};
+
+const processPayment = async (req: Request, res: Response) => {
+    // (Esta función no necesita cambios y se mantiene igual)
+    try {
+        const { order, ...paymentData } = req.body;
         const payment = new Payment(client);
-        const result = await payment.create({ body: paymentPayload });
+        const result = await payment.create({ body: paymentData });
 
         if (result.status === 'approved') {
             const customerData = {
-                email: shippingInfo.email,
-                name: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
-                phone: shippingInfo.phone,
+                email: result.payer!.email!,
+                name: `${order.shippingInfo.firstName} ${order.shippingInfo.lastName}`.trim(),
+                phone: order.shippingInfo.phone,
                 totalSpent: result.transaction_amount!
             };
 
             const customerId = db.customers.findOrCreate(customerData);
-            db.products.updateProductStock(items);
+            db.products.updateProductStock(order.items);
 
             db.orders.create({
                 id: result.id!.toString(),
                 customerId: customerId.toString(),
                 customerName: customerData.name,
                 customerEmail: customerData.email,
-                customerPhone: shippingInfo.phone,
-                customerDocNumber: shippingInfo.docNumber,
-                items: items,
+                customerPhone: order.shippingInfo.phone,
+                customerDocNumber: order.shippingInfo.docNumber,
+                items: order.items,
                 total: result.transaction_amount!,
                 status: 'paid',
-                shippingStreetName: shippingInfo.streetName,
-                shippingStreetNumber: shippingInfo.streetNumber,
-                shippingApartment: shippingInfo.apartment,
-                shippingDescription: shippingInfo.description,
-                shippingCity: shippingInfo.city,
-                shippingPostalCode: shippingInfo.postalCode,
-                shippingProvince: shippingInfo.province,
-                shippingCost: shippingCost || 0,
-                // --- INICIO DE LA CORRECCIÓN: Se pasa un objeto Date ---
+                shippingStreetName: order.shippingInfo.streetName,
+                shippingStreetNumber: order.shippingInfo.streetNumber,
+                shippingApartment: order.shippingInfo.apartment,
+                shippingDescription: order.shippingInfo.description,
+                shippingCity: order.shippingInfo.city,
+                shippingPostalCode: order.shippingInfo.postalCode,
+                shippingProvince: order.shippingInfo.province,
+                shippingCost: order.shippingCost || 0,
                 createdAt: new Date(result.date_created!),
-                // --- FIN DE LA CORRECCIÓN ---
             });
 
             res.status(201).json({ message: 'Pago procesado con éxito', paymentId: result.id, status: result.status });
@@ -80,7 +118,7 @@ const processPayment = async (req: Request, res: Response) => {
     }
 };
 
+router.post('/create-preference', createMercadoPagoPreference);
 router.post('/process-payment', processPayment);
 
 export default router;
-
