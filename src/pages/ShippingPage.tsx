@@ -4,14 +4,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const ShippingPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // Extraemos los nuevos datos (email, postalCode) del estado
-  const { cartItems, total, email, postalCode } = location.state || {};
+  const { cartItems, selectedShipping, total } = location.state || {};
 
-  // Usamos los datos recibidos para el estado inicial del formulario
+  // Estado inicial con todos los nuevos campos
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    email: email || '',
+    email: '', // Añadido para el flujo nuevo
     phone: '',
     docNumber: '',
     streetName: '',
@@ -19,7 +18,7 @@ const ShippingPage: React.FC = () => {
     apartment: '',
     description: '',
     city: 'Rosario',
-    postalCode: postalCode || '',
+    postalCode: selectedShipping?.id === 'cadete' ? '2000' : '',
     province: 'Santa Fe',
   });
 
@@ -27,39 +26,19 @@ const ShippingPage: React.FC = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Antes de ir a pagar, necesitamos calcular el envío
-    try {
-      const response = await fetch('/api/shipping/calculate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postalCode: formData.postalCode }),
-      });
-      const data = await response.json();
-
-      if (data.options && data.options.length > 0) {
-        const selectedShipping = data.options[0]; // Tomamos la primera opción por defecto
-        const finalTotal = total + selectedShipping.cost;
-
-        navigate('/checkout', {
-          state: {
-            cartItems,
-            selectedShipping,
-            total: finalTotal,
-            shippingInfo: formData,
-          },
-        });
-      } else {
-        alert("No se encontraron opciones de envío para el código postal ingresado.");
-      }
-    } catch (error) {
-      alert("Error al calcular el envío. Por favor, intenta de nuevo.");
-    }
+    navigate('/checkout', {
+      state: {
+        cartItems,
+        selectedShipping,
+        total,
+        shippingInfo: formData, // Pasamos el objeto completo con todos los datos
+      },
+    });
   };
 
-  if (!cartItems) {
+  if (!cartItems || !selectedShipping) {
     navigate('/carrito');
     return null;
   }
@@ -70,6 +49,8 @@ const ShippingPage: React.FC = () => {
         <div className="bg-white p-8 rounded-lg shadow-md">
           <h1 className="text-2xl font-bold text-center mb-8">Información de Envío</h1>
           <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* Datos del Destinatario */}
             <fieldset className="space-y-4 rounded-lg border p-4">
               <legend className="-ml-1 px-1 text-lg font-medium">Datos del destinatario</legend>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -83,6 +64,7 @@ const ShippingPage: React.FC = () => {
               </div>
             </fieldset>
 
+            {/* Datos de Domicilio */}
             <fieldset className="space-y-4 rounded-lg border p-4">
               <legend className="-ml-1 px-1 text-lg font-medium">Datos de domicilio</legend>
               <div className="grid grid-cols-3 gap-4">
@@ -100,7 +82,6 @@ const ShippingPage: React.FC = () => {
                   value={formData.description}
                   onChange={handleChange}
                   rows={2}
-                  rows={2}
                   placeholder="Ej: Entre calles, color de la puerta, etc."
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-[#D8A7B1] focus:border-[#D8A7B1]"
                 />
@@ -115,9 +96,9 @@ const ShippingPage: React.FC = () => {
             <div className="pt-4">
               <button
                 type="submit"
-                className="w-full bg-gray-900 hover:bg-gray-700 text-white py-3 rounded-lg text-lg font-bold transition-colors"
+                className="w-full bg-[#D8A7B1] hover:bg-[#c69ba5] text-white py-3 rounded-lg text-lg font-bold transition-colors"
               >
-                Continuar a Pago
+                Continuar al Pago
               </button>
             </div>
           </form>
@@ -127,6 +108,7 @@ const ShippingPage: React.FC = () => {
   );
 };
 
+// Componente auxiliar reutilizable para los campos de input
 const InputField = (props: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) => (
   <div>
     <label htmlFor={props.name} className="block text-sm font-medium text-gray-700 mb-1">{props.label}</label>
