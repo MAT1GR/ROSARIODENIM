@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthContext, useAuthProvider } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart.tsx';
@@ -8,10 +8,10 @@ import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
 import ProductPage from './pages/ProductPage';
-import CartPage from './pages/CartPage';
 import SizeGuidePage from './pages/SizeGuidePage';
 import AdminPage from './pages/AdminPage';
 import CheckoutPage from './pages/CheckoutPage';
+import CheckoutInfoPage from './pages/CheckoutInfoPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import ScrollToTop from './components/ScrollToTop';
 import AnnouncementBar from './components/AnnouncementBar';
@@ -20,9 +20,9 @@ import ReturnsPolicyPage from './pages/ReturnsPolicyPage';
 import FAQPage from './pages/FAQPage';
 import NuestraMisionPage from './pages/NuestraMisionPage';
 import ShippingPage from './pages/ShippingPage.tsx';
+import CartSidebar from './components/CartSidebar';
 
-// Componente interno para manejar la animación por cambio de ruta
-const AnimatedRoutes = () => {
+const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
   return (
     <main key={location.pathname} className="flex-1 fade-in-up">
@@ -30,7 +30,7 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/tienda" element={<ShopPage />} />
         <Route path="/producto/:id" element={<ProductPage />} />
-        <Route path="/carrito" element={<CartPage />} />
+        <Route path="/checkout/info" element={<CheckoutInfoPage />} />
         <Route path="/shipping" element={<ShippingPage />} />
         <Route path="/tallas" element={<SizeGuidePage />} />
         <Route path="/admin" element={<AdminPage />} />
@@ -46,7 +46,8 @@ const AnimatedRoutes = () => {
 
 function App() {
   const auth = useAuthProvider();
-  
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
   usePageFocus('Rosario Denim', '¡No te vayas! Vuelve a Rosario Denim');
 
   return (
@@ -56,10 +57,11 @@ function App() {
           <ScrollToTop />
           <div className="min-h-screen flex flex-col">
             <AnnouncementBar />
-            <Header />
+            <Header onCartClick={() => setIsCartOpen(true)} />
             <AnimatedRoutes />
             <Footer />
             <WhatsAppButton />
+            <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
           </div>
         </Router>
       </CartProvider>

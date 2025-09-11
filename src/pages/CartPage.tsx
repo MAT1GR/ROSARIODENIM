@@ -18,7 +18,6 @@ const CartPage: React.FC = () => {
   const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
   const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const handleCalculateShipping = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +62,6 @@ const CartPage: React.FC = () => {
 
     const finalTotal = total + selectedShipping.cost;
 
-    // Navegamos a /shipping con toda la info necesaria
     navigate('/shipping', {
       state: {
         cartItems: cartItems,
@@ -90,7 +88,7 @@ const CartPage: React.FC = () => {
     );
   }
 
-  const isCheckoutEnabled = selectedShipping !== null && !isProcessingPayment;
+  const isCheckoutEnabled = selectedShipping !== null;
   const shippingCost = selectedShipping ? selectedShipping.cost : 0;
 
   return (

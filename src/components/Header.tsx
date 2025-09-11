@@ -3,7 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, Menu, X } from 'lucide-react';
 import { useCart } from '../hooks/useCart.tsx';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onCartClick: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onCartClick }) => {
   const location = useLocation();
   const { getTotalItems } = useCart();
   const totalItems = getTotalItems();
@@ -29,7 +33,7 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-lg shadow-sm' : 'bg-transparent'}`}>
+      <header className={`sticky top-0 z-40 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-lg shadow-sm' : 'bg-transparent'}`}>
         <div className="container mx-auto px-4 py-5">
           <div className="flex items-center justify-between">
             <Link to="/" className="text-2xl font-extrabold text-brand-dark tracking-tighter">
@@ -41,7 +45,6 @@ const Header: React.FC = () => {
                 <Link
                   key={link.href}
                   to={link.href}
-                  // --- CAMBIO AQUÍ: Se añade la clase "font-poppins" ---
                   className={`font-poppins text-base font-medium text-brand-gray hover:text-brand-dark relative after:content-[''] after:absolute after:w-full after:h-[2px] after:bottom-[-4px] after:left-0 after:bg-brand-pink after:transition-transform after:duration-300 ${
                     location.pathname === link.href ? 'text-brand-dark after:scale-x-100' : 'after:scale-x-0 hover:after:scale-x-50'
                   }`}
@@ -52,14 +55,14 @@ const Header: React.FC = () => {
             </nav>
 
             <div className="flex items-center space-x-4">
-              <Link to="/carrito" className="relative p-2 text-brand-gray hover:text-brand-dark">
+              <button onClick={onCartClick} className="relative p-2 text-brand-gray hover:text-brand-dark">
                 <ShoppingBag size={22} />
                 {totalItems > 0 && (
                   <span className="absolute top-0 right-0 bg-brand-pink text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
                     {totalItems}
                   </span>
                 )}
-              </Link>
+              </button>
               
               <button className="md:hidden p-2 text-brand-gray" onClick={() => setIsMenuOpen(true)}>
                 <Menu size={22} />
@@ -77,7 +80,7 @@ const Header: React.FC = () => {
           </div>
           <nav className="flex flex-col space-y-8">
             {navLinks.map(link => (
-              <Link key={link.href} to={link.href} className={`text-2xl font-bold font-poppins ${location.pathname === link.href ? 'text-brand-pink' : 'text-brand-dark'}`}> {/* CAMBIO AQUÍ */}
+              <Link key={link.href} to={link.href} className={`text-2xl font-bold font-poppins ${location.pathname === link.href ? 'text-brand-pink' : 'text-brand-dark'}`}>
                 {link.label}
               </Link>
             ))}
