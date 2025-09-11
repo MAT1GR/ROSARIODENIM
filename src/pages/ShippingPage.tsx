@@ -100,6 +100,7 @@ const ShippingPage: React.FC = () => {
                   value={formData.description}
                   onChange={handleChange}
                   rows={2}
+                  rows={2}
                   placeholder="Ej: Entre calles, color de la puerta, etc."
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-[#D8A7B1] focus:border-[#D8A7B1]"
                 />
