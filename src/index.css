@@ -44,4 +44,15 @@
     opacity: 1;
     transform: translateY(0);
   }
+
+  /* --- INICIO DE LA CORRECCIÓN DE ANIMACIÓN --- */
+  .animate-marquee-scroll {
+    animation: marquee-scroll 25s linear infinite;
+  }
+
+  @keyframes marquee-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  /* --- FIN DE LA CORRECCIÓN DE ANIMACIÓN --- */
 }

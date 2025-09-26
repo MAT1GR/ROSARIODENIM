@@ -11,8 +11,8 @@ const AnnouncementBar: React.FC = () => {
   );
 
   return (
-    <div className="bg-brand-pink text-white py-2.5 overflow-hidden font-poppins text-sm font-medium tracking-wider">
-      <div className="flex animate-marquee-ltr">
+    <div className="bg-black text-white py-2.5 overflow-hidden font-poppins text-sm font-medium tracking-wider">
+      <div className="flex animate-marquee-scroll">
         <MarqueeContent />
         <MarqueeContent />
       </div>
