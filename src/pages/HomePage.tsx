@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Truck, Award, Ruler, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
@@ -13,21 +13,17 @@ const SkeletonProductCard = () => (
 );
 
 const HomePage: React.FC = () => {
-  const [newProducts, setNewProducts] = useState<Product[]>([]);
-  const [bestSellers, setBestSellers] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const bestSellersRef = useScrollAnimation<HTMLElement>();
-  const newProductsRef = useScrollAnimation<HTMLElement>();
-  const featuresRef = useScrollAnimation<HTMLElement>();
+  const productsRef = useScrollAnimation<HTMLElement>();
 
   useEffect(() => {
     const fetchHomeProducts = async () => {
         setIsLoading(true);
         try {
-            const [newRes, bestRes] = await Promise.all([ fetch('/api/products/newest'), fetch('/api/products/bestsellers') ]);
-            setNewProducts(await newRes.json());
-            setBestSellers(await bestRes.json());
+            const res = await fetch('/api/products?sortBy=newest&limit=4');
+            const data = await res.json();
+            setProducts(data.products);
         } catch (error) { console.error("Error fetching homepage products:", error); } 
         finally { setIsLoading(false); }
     };
@@ -36,81 +32,43 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="bg-brand-bg">
-      <section className="container mx-auto px-4 pt-24 pb-16 md:min-h-screen md:flex md:items-center md:py-0">
-        <div className="w-full text-center">
-          <div className="fade-in-up">
-            <h1 className="text-5xl lg:text-7xl font-black text-brand-primary-text leading-tight tracking-tighter">
-              El calce perfecto <br/> <span className="text-brand-pink">existe.</span>
+      {/* Hero Section */}
+      <section 
+        className="h-[60vh] md:h-[85vh] bg-cover bg-center flex items-center justify-center text-white"
+        style={{ backgroundImage: "url('https://ar.todomoda.com/media/wysiwyg/TM_AR_GLAMDAYS-JUEVES_DESK.png" }}
+      >
+        <div className="text-center bg-black bg-opacity-20 p-8 rounded-lg fade-in-up">
+            <h1 className="text-4xl lg:text-6xl font-black tracking-tight">
+              NUEVA TEMPORADA
             </h1>
-            <p className="mt-6 text-lg text-brand-secondary-text max-w-md mx-auto hidden md:block">
-              Descubrí jeans diseñados para durar y adaptarse a vos, no al revés. Calidad premium y estilo atemporal en cada prenda.
+            <p className="mt-4 text-lg max-w-md mx-auto">
+              Descubrí los últimos ingresos y encontrá tu calce perfecto.
             </p>
             <Link
               to="/tienda"
-              className="mt-8 inline-flex items-center gap-2 bg-brand-pink hover:bg-opacity-90 text-white px-8 py-4 rounded-full text-base font-bold group"
+              className="mt-8 inline-flex items-center gap-2 bg-white hover:bg-gray-200 text-black px-8 py-3 rounded-sm text-sm font-bold group transition-colors"
             >
-              Explorar Colección
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              COMPRAR AHORA
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
-          </div>
         </div>
       </section>
 
-      <section ref={bestSellersRef} className="py-16 px-4 bg-gradient-to-b from-brand-pink to-brand-pink-dark text-white scroll-animate">
-        <div className="container mx-auto max-w-6xl">
-        <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-3xl font-bold">Los Más Vendidos</h2>
-              <p className="text-white/80">Los favoritos de nuestra comunidad.</p>
+      {/* Productos Destacados */}
+      <section ref={productsRef} className="py-20 px-4 scroll-animate">
+        <div className="container mx-auto max-w-7xl">
+            <h2 className="text-3xl font-bold text-center mb-12 tracking-wider">NUEVOS INGRESOS</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {isLoading 
+                ? Array.from({ length: 4 }).map((_, i) => <SkeletonProductCard key={i} />)
+                : products.map(product => <ProductCard key={product.id} product={product} />)
+                }
             </div>
-            <Link to="/tienda" className="font-bold hover:underline">Ver todo</Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {isLoading
-              ? Array.from({ length: 3 }).map((_, i) => <SkeletonProductCard key={i} />)
-              : bestSellers.map(product => <ProductCard key={product.id} product={product} />)
-            }
-          </div>
-        </div>
-      </section>
-
-      <section ref={newProductsRef} className="py-16 px-4 bg-brand-light scroll-animate">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-3xl font-bold">Novedades</h2>
-              <p className="text-brand-secondary-text">Lo último en llegar a nuestra tienda.</p>
-            </div>
-            <Link to="/tienda" className="text-brand-pink font-bold hover:underline">Ver todo</Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {isLoading 
-              ? Array.from({ length: 3 }).map((_, i) => <SkeletonProductCard key={i} />)
-              : newProducts.map(product => <ProductCard key={product.id} product={product} />)
-            }
-          </div>
-        </div>
-      </section>
-      
-      <section ref={featuresRef} className="py-24 px-4 scroll-animate">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center text-center">
-              <div className="bg-brand-pink/20 p-4 rounded-full mb-4"><Award className="text-brand-pink" size={32} /></div>
-              <h3 className="text-xl font-bold mb-2">Denim de Calidad</h3>
-              <p className="text-brand-secondary-text">Seleccionamos los mejores materiales para prendas que duran.</p>
-            </div>
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center text-center">
-              <div className="bg-brand-pink/20 p-4 rounded-full mb-4"><Ruler className="text-brand-pink" size={32} /></div>
-              <h3 className="text-xl font-bold mb-2">Guía de Talles Real</h3>
-              <p className="text-brand-secondary-text">Medidas precisas para que encuentres tu calce perfecto sin errores.</p>
-            </div>
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center text-center">
-              <div className="bg-brand-pink/20 p-4 rounded-full mb-4"><Truck className="text-brand-pink" size={32} /></div>
-              <h3 className="text-xl font-bold mb-2">Envíos a todo el País</h3>
-              <p className="text-brand-secondary-text">Llegamos a cualquier rincón de Argentina con envíos seguros.</p>
-            </div>
-          </div>
+             <div className="text-center mt-16">
+                <Link to="/tienda" className="font-bold text-black border border-black px-10 py-4 hover:bg-black hover:text-white transition-colors text-sm tracking-widest">
+                    VER TODOS LOS PRODUCTOS
+                </Link>
+             </div>
         </div>
       </section>
     </div>

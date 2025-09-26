@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Plus, Minus, Info, CheckCircle, Feather, Move, TrendingUp, Ruler } from 'lucide-react';
+import { Plus, Minus, Info, CheckCircle, HelpCircle, Feather, Move, TrendingUp, Ruler } from 'lucide-react';
 import { Product } from '../types';
 import { useCart } from '../hooks/useCart.tsx';
-import ProductCarousel from '../components/ProductCarousel';
+import ProductCard from '../components/ProductCard'; // Asegúrate de que este import sea correcto
 import ProductMediaGallery from '../components/ProductMediaGallery';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
 
 const Breadcrumbs: React.FC<{ product: Product }> = ({ product }) => (
     <nav className="text-sm text-brand-secondary-text mb-4">
-        <Link to="/" className="hover:text-brand-primary-text">Inicio</Link>
+        <Link to="/" className="hover:text-black">Inicio</Link>
         <span className="mx-2">/</span>
-        <Link to="/tienda" className="hover:text-brand-primary-text uppercase">{product.category}</Link>
-        <span className="mx-2">/</span>
-        <span className="font-bold text-brand-primary-text uppercase">{product.name}</span>
+        <Link to="/tienda" className="hover:text-black uppercase">{product.category}</Link>
     </nav>
 );
 
@@ -28,22 +26,19 @@ const ProductPage: React.FC = () => {
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
 
-  const galleryRef = useScrollAnimation<HTMLDivElement>();
   const detailsRef = useScrollAnimation<HTMLDivElement>();
   const relatedRef = useScrollAnimation<HTMLElement>();
 
-  const STANDARD_SIZES = ['34', '36', '38', '40', '42'];
+  const STANDARD_SIZES = ['34', '36', '38', '40', '42', '44', '46'];
 
   useEffect(() => {
     const fetchProductData = async () => {
       if (!id) return;
       setIsLoading(true);
+      window.scrollTo(0, 0);
       try {
-        const [productRes, allProductsRes] = await Promise.all([
-          fetch(`/api/products/${id}`),
-          fetch('/api/products/all')
-        ]);
-
+        const productRes = await fetch(`/api/products/${id}`);
+        
         if (productRes.ok) {
             const productData = await productRes.json();
             setProduct(productData);
@@ -55,19 +50,22 @@ const ProductPage: React.FC = () => {
                 setSelectedSize('');
             }
 
+            const allProductsRes = await fetch('/api/products/all');
             if (allProductsRes.ok) {
                 const allProducts = await allProductsRes.json();
-                setRelatedProducts(allProducts.filter((p: Product) => p.id !== productData.id));
+                const filteredRelated = allProducts
+                  .filter((p: Product) => p.id !== productData.id && p.category === productData.category)
+                  .slice(0, 4);
+                setRelatedProducts(filteredRelated);
             }
 
-        } else {
-            setProduct(null);
+        } else { 
+            setProduct(null); 
         }
-      } catch (error) {
+      } catch (error) { 
         console.error("Error fetching product data:", error);
-        setProduct(null);
-      } finally {
-        setIsLoading(false);
+      } finally { 
+        setIsLoading(false); 
       }
     };
     fetchProductData();
@@ -75,20 +73,9 @@ const ProductPage: React.FC = () => {
 
   useEffect(() => {
     if (product && selectedSize) {
-      const selectedSizeInfo = product.sizes[selectedSize];
-      if (selectedSizeInfo && selectedSizeInfo.stock > 0) {
         setQuantity(1);
-      } else {
-        setQuantity(0);
-      }
     }
   }, [selectedSize, product]);
-
-  useEffect(() => {
-    if (product) {
-      document.title = `${product.name} - ${selectedSize ? `Talle ${selectedSize}` : 'Rosario Denim'}`;
-    }
-  }, [product, selectedSize]);
 
   const handleAddToCart = () => {
     if (product && selectedSize && isInStock) {
@@ -101,7 +88,7 @@ const ProductPage: React.FC = () => {
   const handleBuyNow = () => {
     if (product && selectedSize && isInStock) {
       addToCart(product, selectedSize, quantity);
-      navigate('/carrito');
+      navigate('/checkout/info');
     }
   };
 
@@ -118,8 +105,8 @@ const ProductPage: React.FC = () => {
 
   const Feature = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined }) => (
     value ? (
-        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-            <Icon className="text-black" size={24} />
+        <div className="flex items-center gap-3 p-3 bg-brand-light rounded-lg border border-brand-border">
+            <Icon className="text-gray-600" size={20} />
             <div>
                 <p className="text-xs text-brand-secondary-text">{label}</p>
                 <p className="text-sm font-semibold text-brand-primary-text">{value}</p>
@@ -130,25 +117,27 @@ const ProductPage: React.FC = () => {
 
   return (
     <div className="bg-brand-bg">
-      <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-8 max-w-7xl mx-auto lg:px-8 lg:py-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-16 max-w-7xl mx-auto px-4 lg:px-8 py-12">
         
-        <div ref={galleryRef} className="lg:col-span-1 scroll-animate">
+        <div className="lg:col-span-1">
           <ProductMediaGallery images={product.images} />
         </div>
 
         <div ref={detailsRef} className="w-full lg:col-span-1 lg:sticky lg:top-24 h-fit scroll-animate" style={{ animationDelay: '200ms' }}> 
-          <div className="px-4 sm:px-6 lg:px-0 py-8 lg:py-0">
+          <div className="py-8 lg:py-0">
             <Breadcrumbs product={product} />
-            <h1 className="text-3xl font-black text-brand-primary-text tracking-wide uppercase">
+            <h1 className="text-3xl font-bold text-black tracking-wide">
               {product.name}
             </h1>
-            <p className="text-4xl font-bold text-brand-primary-text mt-2">${product.price.toLocaleString('es-AR')}</p>
-            {selectedSize && <p className="text-md font-medium text-brand-secondary-text mt-2">Talle: {selectedSize}</p>}
-
-
+            <p className="text-2xl font-bold text-black mt-2">${product.price.toLocaleString('es-AR')}</p>
+            
             <div className="mt-8">
               <div className="flex justify-between items-center mb-2">
-                <p className="text-sm font-medium text-brand-primary-text">Elegí tu talle:</p>
+                <p className="text-sm font-bold text-black tracking-wider">TALLE</p>
+                <Link to="/tallas" className="flex items-center gap-1 text-sm text-brand-secondary-text hover:underline font-medium">
+                  <HelpCircle size={16} />
+                  Guía de talles
+                </Link>
               </div>
               <div className="flex flex-wrap gap-2">
                 {STANDARD_SIZES.map((size) => {
@@ -157,44 +146,42 @@ const ProductPage: React.FC = () => {
                   return (
                     <button
                       key={size}
-                      onClick={() => setSelectedSize(size)}
+                      onClick={() => isAvailable && setSelectedSize(size)}
                       disabled={!isAvailable}
-                      className={`px-4 py-2 text-center border rounded-sm transition-all duration-200 text-sm font-medium ${
+                      className={`px-4 py-2 text-center border rounded-md transition-all duration-200 text-sm font-medium relative ${
                         !isAvailable
-                          ? 'border-gray-200 text-gray-400 line-through cursor-not-allowed bg-gray-50'
+                          ? 'border-gray-200 text-gray-400 bg-gray-50/80 cursor-not-allowed'
                           : selectedSize === size
                           ? 'bg-black text-white border-black'
                           : 'border-gray-300 text-black hover:border-black'
                       }`}
                     >
                       {size}
+                      {!isAvailable && <div className="absolute inset-0 bg-transparent" style={{background: 'linear-gradient(to top right, transparent 49.5%, #d1d5db 49.5%, #d1d5db 50.5%, transparent 50.5%)'}}></div>}
                     </button>
                   )
                 })}
               </div>
             </div>
             
-            <div className="mt-8 flex items-end gap-4">
-                <div>
-                  <p className="text-sm font-medium text-brand-primary-text mb-2">Cantidad:</p>
-                  <div className="flex items-center border border-brand-border rounded-sm w-fit">
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3 py-3 text-brand-secondary-text hover:text-brand-primary-text"><Minus size={16} /></button>
-                    <span className="px-4 text-center font-bold text-lg text-brand-primary-text">{quantity}</span>
-                    <button onClick={() => setQuantity(Math.min(maxStock, quantity + 1))} disabled={quantity >= maxStock} className="px-3 py-3 text-brand-secondary-text hover:text-brand-primary-text disabled:text-gray-300"><Plus size={16} /></button>
-                  </div>
+            <div className="mt-8 flex items-center gap-4">
+                <div className="flex items-center border border-gray-300 rounded-md">
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={!isInStock} className="px-3 py-3 text-gray-500 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"><Minus size={16} /></button>
+                    <span className="px-4 text-center font-bold text-lg text-black">{quantity}</span>
+                    <button onClick={() => setQuantity(Math.min(maxStock, quantity + 1))} disabled={!isInStock || quantity >= maxStock} className="px-3 py-3 text-gray-500 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"><Plus size={16} /></button>
                 </div>
                 <button
                     onClick={handleAddToCart}
                     disabled={!selectedSize || !isInStock || addedToCart}
-                    className={`flex-1 py-3 text-sm font-bold rounded-sm flex items-center justify-center transition-colors border border-black text-black ${
+                    className={`flex-1 py-3 text-sm font-bold rounded-md flex items-center justify-center transition-colors border ${
                         addedToCart 
                         ? 'bg-emerald-500 text-white border-emerald-500'
                         : (selectedSize && isInStock)
-                        ? 'hover:bg-gray-100'
+                        ? 'text-black bg-white border-black hover:bg-gray-100' // <-- BORDE NEGRO VISIBLE
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'
                     }`}
                 >
-                    {addedToCart ? <><CheckCircle className="mr-2" size={16} /> Agregado</> : 'Agregar al Carrito'}
+                    {addedToCart ? <><CheckCircle className="mr-2" size={16} /> AGREGADO</> : 'AGREGAR AL CARRITO'}
                 </button>
             </div>
 
@@ -202,68 +189,43 @@ const ProductPage: React.FC = () => {
                  <button
                     onClick={handleBuyNow}
                     disabled={!selectedSize || !isInStock}
-                    className={`w-full py-4 text-base font-bold rounded-sm flex items-center justify-center transition-opacity ${
-                        (selectedSize && isInStock) ? 'bg-black hover:opacity-90 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    className={`w-full py-4 text-base font-bold rounded-md flex items-center justify-center transition-opacity ${
+                        (selectedSize && isInStock) ? 'bg-black hover:opacity-90 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                 >
-                  Comprar Ahora
+                  COMPRAR AHORA
                 </button>
             </div>
 
-            <div className="mt-8 border-t pt-6">
-              <h3 className="font-bold text-lg text-brand-primary-text mb-4">Guía de Tallas (en cm)</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-500">
-                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-4 py-3">Talle</th>
-                      <th scope="col" className="px-4 py-3">Cintura</th>
-                      <th scope="col" className="px-4 py-3">Cadera</th>
-                      <th scope="col" className="px-4 py-3">Tiro</th>
-                      <th scope="col" className="px-4 py-3">Largo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(product.sizes).map(([size, details]) => (
-                       details.available && details.stock > 0 && (
-                        <tr key={size} className="border-b">
-                          <th scope="row" className="px-4 py-3 font-medium text-gray-900">{size}</th>
-                          <td className="px-4 py-3">{details.measurements || 'No especificado'}</td>
-                          <td className="px-4 py-3">{details.measurements || 'No especificado'}</td>
-                          <td className="px-4 py-3">{details.measurements || 'No especificado'}</td>
-                          <td className="px-4 py-3">{details.measurements || 'No especificado'}</td>
-                        </tr>
-                       )
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="mt-8 border-t pt-6">
-              <h3 className="font-bold text-lg text-brand-primary-text mb-4">Características</h3>
+            <div className="mt-10 border-t border-brand-border pt-8">
+              <h3 className="font-bold text-lg text-black mb-4">Detalles y Características</h3>
+              <p className="text-brand-secondary-text text-sm mb-6">{product.description}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Feature icon={Feather} label="Tela" value={`Denim rígido de 14 onzas`} />
-                  <Feature icon={Move} label="Calce" value={`Mom fit con pierna cónica`} />
-                  <Feature icon={TrendingUp} label="Tiro" value={`Alto, 28cm desde la entrepierna`} />
-                  {selectedSizeInfo && <Feature icon={Ruler} label={`Medidas Talle ${selectedSize}`} value={selectedSizeInfo.measurements} />}
+                  <Feature icon={Feather} label="Material" value={product.material} />
+                  <Feature icon={Move} label="Calce" value={product.fit} />
+                  <Feature icon={TrendingUp} label="Tiro" value={product.rise} />
+                  {selectedSizeInfo?.measurements && <Feature icon={Ruler} label={`Medidas (Talle ${selectedSize})`} value={selectedSizeInfo.measurements} />}
               </div>
             </div>
             
-            <div className="mt-6 p-3 bg-brand-light rounded-sm items-start gap-3 text-xs text-brand-secondary-text flex">
-                <Info size={20} className="flex-shrink-0 mt-0.5" />
-                <span>El pedido se despacha de 4 a 7 días HÁBILES luego de haber realizado el pago ❤️</span>
+            <div className="mt-6 p-4 bg-brand-light rounded-lg items-start gap-3 text-sm text-brand-secondary-text flex">
+                <Info size={20} className="flex-shrink-0 mt-0.5 text-gray-500" />
+                <span>El pedido se despacha de 4 a 7 días hábiles luego de haber realizado el pago.</span>
             </div>
           </div>
         </div>
       </div>
 
-      <section ref={relatedRef} className="py-16 scroll-animate">
-        <div className="container mx-auto max-w-6xl px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">También te puede interesar</h2>
-          <ProductCarousel products={relatedProducts} />
-        </div>
-      </section>
+      {relatedProducts.length > 0 && (
+        <section ref={relatedRef} className="py-20 bg-brand-light scroll-animate">
+            <div className="container mx-auto max-w-7xl px-4">
+            <h2 className="text-2xl font-bold text-center mb-12 tracking-wider">PRODUCTOS RELACIONADOS</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {relatedProducts.map(p => <ProductCard key={p.id} product={p}/>)}
+            </div>
+            </div>
+        </section>
+      )}
     </div>
   );
 };

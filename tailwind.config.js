@@ -1,18 +1,20 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
     extend: {
-      // Paleta de colores extraída de la nueva captura
       colors: {
-        'brand-primary-text': '#5a5a5a',    // Para títulos y precios
-        'brand-secondary-text': '#a8a8a8', // Para breadcrumbs y texto secundario
-        'brand-button-bg': '#000000',      // Fondo de botones activos (AHORA NEGRO)
-        'brand-button-bg-hover': '#333333',// Hover para los botones (AHORA GRIS OSCURO)
-        'brand-border': '#d1d1d1',        // Bordes de elementos inactivos
-        'brand-pink': '#000000',           // Rosa erradicado, ahora es negro para elementos de acción
-        'brand-pink-dark': '#333333',      // Sombra de negro para degradados/hovers
-        'brand-light': '#F5F5F5',
+        'brand-primary-text': '#333333',
+        'brand-secondary-text': '#757575',
+        'brand-button-bg': '#000000',
+        'brand-button-bg-hover': '#333333',
+        'brand-border': '#e0e0e0',
+        'brand-pink': '#000000',
+        'brand-pink-dark': '#333333',
+        'brand-light': '#f5f5f5',
         'brand-bg': '#FFFFFF',
       },
       fontFamily: {
@@ -22,4 +24,4 @@ export default {
     },
   },
   plugins: [],
-};
+}
