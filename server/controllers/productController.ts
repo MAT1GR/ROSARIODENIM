@@ -73,6 +73,12 @@ export const createProduct = (req: Request, res: Response) => {
         
         const imagePaths = files ? files.map(file => `/uploads/${file.filename}`) : [];
         newProductData.images = imagePaths;
+
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Convertimos explícitamente los valores de 'isNew' y 'isBestSeller' a booleanos.
+        newProductData.isNew = newProductData.isNew === 'true';
+        newProductData.isBestSeller = newProductData.isBestSeller === 'true';
+        // --- FIN DE LA CORRECCIÓN ---
         
         const createdProductId = db.products.create(newProductData);
         const createdProduct = db.products.getById(createdProductId);
@@ -100,6 +106,12 @@ export const updateProduct = (req: Request, res: Response) => {
         }
 
         productData.images = finalImagePaths;
+
+        // --- INICIO DE LA CORRECCIÓN ---
+        // También aplicamos la conversión en la actualización.
+        productData.isNew = productData.isNew === 'true';
+        productData.isBestSeller = productData.isBestSeller === 'true';
+        // --- FIN DE LA CORRECCIÓN ---
 
         const updated = db.products.update(req.params.id, productData);
         if (updated) {

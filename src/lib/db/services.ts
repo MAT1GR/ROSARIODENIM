@@ -335,4 +335,3 @@ export const dashboardService = {
         return rows.map(parseCustomer);
     }
 };
-
