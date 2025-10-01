@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Plus, Minus, Info, CheckCircle, HelpCircle, Feather, Move, TrendingUp, Ruler } from 'lucide-react';
+import { Plus, Minus, Info, CheckCircle, Feather, Move, TrendingUp, Ruler } from 'lucide-react';
 import { Product } from '../types';
 import { useCart } from '../hooks/useCart.tsx';
 import ProductCarousel from '../components/ProductCarousel';
@@ -39,7 +39,11 @@ const ProductPage: React.FC = () => {
       if (!id) return;
       setIsLoading(true);
       try {
-        const productRes = await fetch(`/api/products/${id}`);
+        const [productRes, allProductsRes] = await Promise.all([
+          fetch(`/api/products/${id}`),
+          fetch('/api/products/all')
+        ]);
+
         if (productRes.ok) {
             const productData = await productRes.json();
             setProduct(productData);
@@ -51,11 +55,11 @@ const ProductPage: React.FC = () => {
                 setSelectedSize('');
             }
 
-            const allProductsRes = await fetch('/api/products/all');
             if (allProductsRes.ok) {
                 const allProducts = await allProductsRes.json();
                 setRelatedProducts(allProducts.filter((p: Product) => p.id !== productData.id));
             }
+
         } else {
             setProduct(null);
         }
@@ -79,6 +83,12 @@ const ProductPage: React.FC = () => {
       }
     }
   }, [selectedSize, product]);
+
+  useEffect(() => {
+    if (product) {
+      document.title = `${product.name} - ${selectedSize ? `Talle ${selectedSize}` : 'Rosario Denim'}`;
+    }
+  }, [product, selectedSize]);
 
   const handleAddToCart = () => {
     if (product && selectedSize && isInStock) {
@@ -109,7 +119,7 @@ const ProductPage: React.FC = () => {
   const Feature = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined }) => (
     value ? (
         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-            <Icon className="text-brand-pink" size={24} />
+            <Icon className="text-black" size={24} />
             <div>
                 <p className="text-xs text-brand-secondary-text">{label}</p>
                 <p className="text-sm font-semibold text-brand-primary-text">{value}</p>
@@ -121,23 +131,24 @@ const ProductPage: React.FC = () => {
   return (
     <div className="bg-brand-bg">
       <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-8 max-w-7xl mx-auto lg:px-8 lg:py-12">
+        
         <div ref={galleryRef} className="lg:col-span-1 scroll-animate">
           <ProductMediaGallery images={product.images} />
         </div>
+
         <div ref={detailsRef} className="w-full lg:col-span-1 lg:sticky lg:top-24 h-fit scroll-animate" style={{ animationDelay: '200ms' }}> 
           <div className="px-4 sm:px-6 lg:px-0 py-8 lg:py-0">
             <Breadcrumbs product={product} />
-            <h1 className="text-3xl font-black text-brand-primary-text tracking-wide uppercase">{product.name}</h1>
-            <p className="text-2xl font-bold text-brand-primary-text mt-2">${product.price.toLocaleString('es-AR')}</p>
+            <h1 className="text-3xl font-black text-brand-primary-text tracking-wide uppercase">
+              {product.name}
+            </h1>
+            <p className="text-4xl font-bold text-brand-primary-text mt-2">${product.price.toLocaleString('es-AR')}</p>
             {selectedSize && <p className="text-md font-medium text-brand-secondary-text mt-2">Talle: {selectedSize}</p>}
+
 
             <div className="mt-8">
               <div className="flex justify-between items-center mb-2">
                 <p className="text-sm font-medium text-brand-primary-text">Elegí tu talle:</p>
-                <Link to="/tallas" className="flex items-center gap-1 text-sm text-[#D8A7B1] hover:underline font-semibold">
-                  <HelpCircle size={16} />
-                  Guía de talles completa
-                </Link>
               </div>
               <div className="flex flex-wrap gap-2">
                 {STANDARD_SIZES.map((size) => {
@@ -152,8 +163,8 @@ const ProductPage: React.FC = () => {
                         !isAvailable
                           ? 'border-gray-200 text-gray-400 line-through cursor-not-allowed bg-gray-50'
                           : selectedSize === size
-                          ? 'bg-brand-button-bg text-white border-brand-button-bg'
-                          : 'border-brand-border text-brand-primary-text hover:border-brand-primary-text'
+                          ? 'bg-black text-white border-black'
+                          : 'border-gray-300 text-black hover:border-black'
                       }`}
                     >
                       {size}
@@ -175,12 +186,12 @@ const ProductPage: React.FC = () => {
                 <button
                     onClick={handleAddToCart}
                     disabled={!selectedSize || !isInStock || addedToCart}
-                    className={`flex-1 py-3 text-sm font-bold rounded-sm flex items-center justify-center transition-colors ${
+                    className={`flex-1 py-3 text-sm font-bold rounded-sm flex items-center justify-center transition-colors border border-black text-black ${
                         addedToCart 
-                        ? 'bg-emerald-500 text-white'
+                        ? 'bg-emerald-500 text-white border-emerald-500'
                         : (selectedSize && isInStock)
-                        ? 'bg-brand-button-bg hover:bg-brand-button-bg-hover text-white'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        ? 'hover:bg-gray-100'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'
                     }`}
                 >
                     {addedToCart ? <><CheckCircle className="mr-2" size={16} /> Agregado</> : 'Agregar al Carrito'}
@@ -192,14 +203,13 @@ const ProductPage: React.FC = () => {
                     onClick={handleBuyNow}
                     disabled={!selectedSize || !isInStock}
                     className={`w-full py-4 text-base font-bold rounded-sm flex items-center justify-center transition-opacity ${
-                        (selectedSize && isInStock) ? 'bg-brand-pink hover:opacity-90 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        (selectedSize && isInStock) ? 'bg-black hover:opacity-90 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
                 >
                   Comprar Ahora
                 </button>
             </div>
 
-            {/* --- INICIO DE LA MEJORA: TABLA DE MEDIDAS VISIBLE --- */}
             <div className="mt-8 border-t pt-6">
               <h3 className="font-bold text-lg text-brand-primary-text mb-4">Guía de Tallas (en cm)</h3>
               <div className="overflow-x-auto">
@@ -207,7 +217,10 @@ const ProductPage: React.FC = () => {
                   <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
                       <th scope="col" className="px-4 py-3">Talle</th>
-                      <th scope="col" className="px-4 py-3">Medidas</th>
+                      <th scope="col" className="px-4 py-3">Cintura</th>
+                      <th scope="col" className="px-4 py-3">Cadera</th>
+                      <th scope="col" className="px-4 py-3">Tiro</th>
+                      <th scope="col" className="px-4 py-3">Largo</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -216,6 +229,9 @@ const ProductPage: React.FC = () => {
                         <tr key={size} className="border-b">
                           <th scope="row" className="px-4 py-3 font-medium text-gray-900">{size}</th>
                           <td className="px-4 py-3">{details.measurements || 'No especificado'}</td>
+                          <td className="px-4 py-3">{details.measurements || 'No especificado'}</td>
+                          <td className="px-4 py-3">{details.measurements || 'No especificado'}</td>
+                          <td className="px-4 py-3">{details.measurements || 'No especificado'}</td>
                         </tr>
                        )
                     ))}
@@ -223,9 +239,7 @@ const ProductPage: React.FC = () => {
                 </table>
               </div>
             </div>
-            {/* --- FIN DE LA MEJORA --- */}
 
-            {/* --- INICIO DE LA MEJORA: CARACTERÍSTICAS ESPECIALIZADAS --- */}
             <div className="mt-8 border-t pt-6">
               <h3 className="font-bold text-lg text-brand-primary-text mb-4">Características</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -235,7 +249,6 @@ const ProductPage: React.FC = () => {
                   {selectedSizeInfo && <Feature icon={Ruler} label={`Medidas Talle ${selectedSize}`} value={selectedSizeInfo.measurements} />}
               </div>
             </div>
-             {/* --- FIN DE LA MEJORA --- */}
             
             <div className="mt-6 p-3 bg-brand-light rounded-sm items-start gap-3 text-xs text-brand-secondary-text flex">
                 <Info size={20} className="flex-shrink-0 mt-0.5" />
