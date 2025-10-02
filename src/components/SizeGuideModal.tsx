@@ -1,35 +1,75 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import React from "react";
+import { X, Ruler } from "lucide-react";
 
 interface SizeGuideModalProps {
   onClose: () => void;
 }
 
+const sizeData = [
+  { size: "36", waist: "70-74 cm", hip: "96-100 cm" },
+  { size: "38", waist: "74-78 cm", hip: "100-104 cm" },
+  { size: "40", waist: "78-82 cm", hip: "104-108 cm" },
+  { size: "42", waist: "82-86 cm", hip: "108-112 cm" },
+  { size: "44", waist: "86-90 cm", hip: "112-116 cm" },
+];
+
 const SizeGuideModal: React.FC<SizeGuideModalProps> = ({ onClose }) => {
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
+    <div
+      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fade-in"
       onClick={onClose}
     >
-      <div 
-        className="bg-white rounded-lg p-6 max-w-lg w-full relative"
-        onClick={e => e.stopPropagation()} // Evita que el clic dentro del modal lo cierre
+      <div
+        className="bg-white rounded-lg p-8 max-w-lg w-full relative transform animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
       >
-        <button 
+        <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors"
         >
           <X size={24} />
         </button>
-        <h3 className="text-xl font-bold mb-4">¿Cómo medir tu jean?</h3>
-        <p className="text-gray-600 mb-4">
-          Usa un jean que te quede perfecto y mídela sobre una superficie plana para comparar con nuestras medidas.
+        <div className="flex items-center gap-3 mb-6">
+          <Ruler size={24} className="text-brand-pink" />
+          <h3 className="text-2xl font-bold">Guía de Talles</h3>
+        </div>
+
+        <p className="text-gray-600 mb-6 text-sm">
+          Te recomendamos medir un jean que te quede bien y compararlo con
+          nuestra tabla. Las medidas son aproximadas y pueden variar levemente.
         </p>
-        <img 
-          src="https://i.ibb.co/6rC3h6B/how-to-measure.png" // He subido una imagen de ejemplo. Reemplázala con la tuya.
-          alt="Diagrama de cómo medir un jean" 
-          className="w-full h-auto rounded"
-        />
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="p-3 font-semibold text-sm border-b">Talle</th>
+                <th className="p-3 font-semibold text-sm border-b">Cintura</th>
+                <th className="p-3 font-semibold text-sm border-b">Cadera</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sizeData.map((row) => (
+                <tr key={row.size} className="hover:bg-gray-50">
+                  <td className="p-3 border-b border-gray-200 font-medium">
+                    {row.size}
+                  </td>
+                  <td className="p-3 border-b border-gray-200 text-gray-700">
+                    {row.waist}
+                  </td>
+                  <td className="p-3 border-b border-gray-200 text-gray-700">
+                    {row.hip}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+          <b>Tip:</b> Si estás entre dos talles, te recomendamos elegir el más
+          grande para un calce más cómodo y relajado.
+        </div>
       </div>
     </div>
   );
