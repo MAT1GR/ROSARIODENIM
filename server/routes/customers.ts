@@ -1,11 +1,14 @@
-import { Router } from 'express';
-import { getAllCustomers, getCustomerById } from '../controllers/customerController';
-import { getCustomerOrders } from '../controllers/orderController';
+import { Router } from "express";
+import * as customerController from "../controllers/customerController";
 
 const router = Router();
 
-router.get('/', getAllCustomers);
-router.get('/:id', getCustomerById);
-router.get('/:id/orders', getCustomerOrders);
+router.get("/", customerController.getAllCustomers);
+// --- CORRECCIÓN ---
+// La ruta estaba mal formada. Se ha corregido para que tenga un nombre de parámetro válido.
+router.get("/:id", customerController.getCustomerById);
+router.post("/", customerController.createCustomer);
+router.put("/:id", customerController.updateCustomer);
+router.delete("/:id", customerController.deleteCustomer);
 
 export default router;

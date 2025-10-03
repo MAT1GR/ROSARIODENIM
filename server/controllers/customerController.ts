@@ -24,3 +24,15 @@ export const getCustomerById = (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error al obtener el cliente' });
     }
 };
+
+export function createCustomer(arg0: string, createCustomer: any) {
+    throw new Error("Function not implemented.");
+}
+export function deleteCustomer(arg0: string, deleteCustomer: any) {
+    throw new Error("Function not implemented.");
+}
+
+export function updateCustomer(arg0: string, updateCustomer: any) {
+    throw new Error("Function not implemented.");
+}
+

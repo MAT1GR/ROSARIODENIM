@@ -140,7 +140,7 @@ const processPayment = async (req: Request, res: Response) => {
   }
 };
 
-// --- NUEVA FUNCIÓN PARA TRANSFERENCIAS ---
+// --- FUNCIÓN PARA TRANSFERENCIAS ACTUALIZADA ---
 const createTransferOrder = (req: Request, res: Response) => {
   const { items, shippingInfo, shipping, total } = req.body as {
     items: CartItem[];
@@ -148,6 +148,20 @@ const createTransferOrder = (req: Request, res: Response) => {
     shipping: { name: string; cost: number };
     total: number;
   };
+
+  // Validación de datos de entrada
+  if (
+    !items ||
+    !Array.isArray(items) ||
+    items.length === 0 ||
+    !shippingInfo ||
+    !shipping ||
+    typeof total === "undefined"
+  ) {
+    return res
+      .status(400)
+      .json({ message: "Faltan datos en la solicitud para crear la orden." });
+  }
 
   try {
     const orderId = `TRANSFER-${Date.now()}`;
@@ -158,15 +172,12 @@ const createTransferOrder = (req: Request, res: Response) => {
       email: shippingInfo.email,
       name: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
       phone: shippingInfo.phone,
-      totalSpent: total, // Se podría actualizar después si el pago se confirma
+      totalSpent: total,
     };
 
-    // Crear o encontrar cliente
     const customerId = db.customers.findOrCreate(customerData);
-    // Actualizar stock
     db.products.updateProductStock(items);
 
-    // Crear la orden en la base de datos
     db.orders.create({
       id: orderId,
       customerId: customerId.toString(),
@@ -176,7 +187,7 @@ const createTransferOrder = (req: Request, res: Response) => {
       customerDocNumber: shippingInfo.docNumber || "",
       items: items,
       total: total,
-      status: "pending_payment", // Estado especial para transferencias
+      status: "pending", // Corregido: Usamos el estado "pending" que es válido
       shippingStreetName: shippingInfo.streetName,
       shippingStreetNumber: shippingInfo.streetNumber,
       shippingApartment: shippingInfo.apartment,
@@ -186,24 +197,21 @@ const createTransferOrder = (req: Request, res: Response) => {
       shippingProvince: shippingInfo.province,
       shippingCost: shipping.cost || 0,
       createdAt: new Date(),
-      // Podrías añadir la fecha de expiración a tu schema si quisieras
-      // expiresAt: expirationDate,
     });
 
-    // Aquí podrías disparar el envío de un email de "Acción Requerida"
-
     res.status(201).json({ id: orderId });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating transfer order:", error);
-    res
-      .status(500)
-      .json({ message: "No se pudo crear la orden para la transferencia." });
+    // Devolvemos un error más detallado para facilitar el diagnóstico
+    res.status(500).json({
+      message: "No se pudo crear la orden para la transferencia.",
+      error: error.message || "Error desconocido en el servidor.",
+    });
   }
 };
 
 router.post("/create-preference", createMercadoPagoPreference);
 router.post("/process-payment", processPayment);
-// --- NUEVA RUTA PARA TRANSFERENCIAS ---
 router.post("/create-transfer-order", createTransferOrder);
 
 export default router;
