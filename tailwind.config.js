@@ -4,13 +4,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        "brand-primary-text": "#2c2c2c",
-        "brand-secondary-text": "#5a5a5a",
-        "brand-primary": "#000000",
-        "brand-secondary": "#1a1a1a",
-        "brand-border": "#d1d1d1",
-        "brand-light": "#F5F5F5",
-        "brand-bg": "#FFFFFF",
+        // Nueva paleta de colores
+        "blanco-hueso": "#ffffffff",
+        arena: "#D3CFC3",
+        caramelo: "#B5651D",
+        "gris-oscuro": "#41403E",
+
+        // Mapeo a los nombres de tema existentes para una actualización global
+        "brand-bg": "#F7F5F2",
+        "brand-primary-text": "#41403E",
+        "brand-secondary-text": "#41403E", // Se usa gris oscuro para legibilidad
+        "brand-accent": "#B5651D",
+        "brand-light": "#F7F5F2",
+        "brand-border": "#D3CFC3", // Arena para bordes
       },
       fontFamily: {
         roboto: ["Roboto", "sans-serif"],
