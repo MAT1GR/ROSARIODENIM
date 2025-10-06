@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Lock, CreditCard, Banknote } from "lucide-react";
 import { CartItem } from "../types";
+import { useCart } from "../hooks/useCart"; // Importa el hook del carrito
 
 declare global {
   interface Window {
@@ -12,6 +13,7 @@ declare global {
 const CheckoutPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { clearCart } = useCart(); // Obtén la función para limpiar el carrito
 
   const { cartItems, selectedShipping, total, shippingInfo } =
     location.state || {};
@@ -52,11 +54,12 @@ const CheckoutPage: React.FC = () => {
       } finally {
         setIsLoading(false);
       }
-          } else if (paymentMethod === "transferencia") {
-          try {
-            const response = await fetch("/api/payments/create-transfer-order", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },          body: JSON.stringify({
+    } else if (paymentMethod === "transferencia") {
+      try {
+        const response = await fetch("/api/payments/create-transfer-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             items: cartItems,
             shippingInfo: shippingInfo,
             shipping: selectedShipping,
@@ -65,12 +68,18 @@ const CheckoutPage: React.FC = () => {
         });
         if (!response.ok)
           throw new Error("Error al crear la orden de transferencia.");
-        const orderData = await response.json();
+        const orderData = await response.json(); // El backend devuelve { id, order }
+
+        clearCart(); // Limpia el carrito después de crear la orden
+
+        // Pasa solo el objeto 'order' a la siguiente ruta
         navigate(`/pedido-pendiente/${orderData.id}`, {
-          state: { order: orderData },
+          state: { order: orderData.order },
         });
       } catch (err: any) {
         setError(err.message);
+      } finally {
+        // Asegúrate de que el estado de carga siempre se desactive
         setIsLoading(false);
       }
     }

@@ -1,26 +1,32 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AuthContext, useAuthProvider } from './hooks/useAuth';
-import { CartProvider } from './hooks/useCart.tsx';
-import { usePageFocus } from './hooks/usePageFocus';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
-import ShopPage from './pages/ShopPage';
-import ProductPage from './pages/ProductPage';
-import SizeGuidePage from './pages/SizeGuidePage';
-import AdminPage from './pages/AdminPage';
-import CheckoutPage from './pages/CheckoutPage';
-import CheckoutInfoPage from './pages/CheckoutInfoPage';
-import PaymentSuccessPage from './pages/PaymentSuccessPage';
-import ScrollToTop from './components/ScrollToTop';
-import AnnouncementBar from './components/AnnouncementBar';
-import WhatsAppButton from './components/WhatsAppButton';
-import ReturnsPolicyPage from './pages/ReturnsPolicyPage';
-import FAQPage from './pages/FAQPage';
-import NuestraMisionPage from './pages/NuestraMisionPage';
-import ShippingPage from './pages/ShippingPage.tsx';
-import CartSidebar from './components/CartSidebar';
+import React, { useState } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+import { AuthContext, useAuthProvider } from "./hooks/useAuth";
+import { CartProvider } from "./hooks/useCart.tsx";
+import { usePageFocus } from "./hooks/usePageFocus";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import HomePage from "./pages/HomePage";
+import ShopPage from "./pages/ShopPage";
+import ProductPage from "./pages/ProductPage";
+import SizeGuidePage from "./pages/SizeGuidePage";
+import AdminPage from "./pages/AdminPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import CheckoutInfoPage from "./pages/CheckoutInfoPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import ScrollToTop from "./components/ScrollToTop";
+import AnnouncementBar from "./components/AnnouncementBar";
+import WhatsAppButton from "./components/WhatsAppButton";
+import ReturnsPolicyPage from "./pages/ReturnsPolicyPage";
+import TransferPendingPage from "./pages/TransferPendingPage";
+import FAQPage from "./pages/FAQPage";
+import NuestraMisionPage from "./pages/NuestraMisionPage";
+import ShippingPage from "./pages/ShippingPage.tsx";
+import CartSidebar from "./components/CartSidebar";
 
 const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
@@ -36,6 +42,7 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
+        <Route path="/pedido-pendiente/:id" element={<TransferPendingPage />} />
         <Route path="/cambios-y-devoluciones" element={<ReturnsPolicyPage />} />
         <Route path="/preguntas-frecuentes" element={<FAQPage />} />
         <Route path="/nuestra-mision" element={<NuestraMisionPage />} />
@@ -48,7 +55,7 @@ function App() {
   const auth = useAuthProvider();
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  usePageFocus('Rosario Denim', '¡No te vayas! Vuelve a Rosario Denim');
+  usePageFocus("Rosario Denim", "¡No te vayas! Vuelve a Rosario Denim");
 
   return (
     <AuthContext.Provider value={auth}>
@@ -61,7 +68,10 @@ function App() {
             <AnimatedRoutes />
             <Footer />
             <WhatsAppButton />
-            <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+            <CartSidebar
+              isOpen={isCartOpen}
+              onClose={() => setIsCartOpen(false)}
+            />
           </div>
         </Router>
       </CartProvider>

@@ -1,3 +1,5 @@
+// mat1gr/rosariodenim/ROSARIODENIM-0a9e948297937bd8aefc1890579b3a59f99d6fdc/src/types/index.ts
+
 export interface Product {
   id: string;
   name: string;
@@ -9,7 +11,9 @@ export interface Product {
   material: string;
   rise: string;
   fit: string;
-  sizes: { [key: string]: { available: boolean; stock: number; measurements: string } };
+  sizes: {
+    [key: string]: { available: boolean; stock: number; measurements: string };
+  };
   isNew: boolean;
   isBestSeller: boolean;
 }
@@ -34,7 +38,7 @@ export interface CustomerOrder {
   id: string;
   items: CartItem[];
   total: number;
-  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  status: "pending" | "paid" | "shipped" | "delivered" | "cancelled";
   createdAt: Date;
 }
 
@@ -47,7 +51,7 @@ export interface Order {
   customerDocNumber?: string;
   items: CartItem[];
   total: number;
-  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  status: "pending" | "paid" | "shipped" | "delivered" | "cancelled";
   shippingStreetName?: string;
   shippingStreetNumber?: string;
   shippingApartment?: string;
@@ -96,7 +100,7 @@ export interface Category {
 export interface Coupon {
   id: number;
   code: string;
-  type: 'percentage' | 'fixed';
+  type: "percentage" | "fixed";
   value: number;
   min_amount: number;
   max_uses?: number;

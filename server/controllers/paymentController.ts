@@ -140,7 +140,7 @@ const processPayment = async (req: Request, res: Response) => {
   }
 };
 
-// --- NUEVA FUNCIÓN PARA TRANSFERENCIAS ---
+// --- FUNCIÓN PARA TRANSFERENCIAS (CORREGIDA) ---
 const createTransferOrder = (req: Request, res: Response) => {
   const { items, shippingInfo, shipping, total } = req.body as {
     items: CartItem[];
@@ -166,8 +166,7 @@ const createTransferOrder = (req: Request, res: Response) => {
     // Actualizar stock
     db.products.updateProductStock(items);
 
-    // Crear la orden en la base de datos
-    db.orders.create({
+    const newOrderData = {
       id: orderId,
       customerId: customerId.toString(),
       customerName: customerData.name,
@@ -186,13 +185,25 @@ const createTransferOrder = (req: Request, res: Response) => {
       shippingProvince: shippingInfo.province,
       shippingCost: shipping.cost || 0,
       createdAt: new Date(),
-      // Podrías añadir la fecha de expiración a tu schema si quisieras
-      // expiresAt: expirationDate,
-    });
+    };
 
-    // Aquí podrías disparar el envío de un email de "Acción Requerida"
+    // Crear la orden en la base de datos
+    db.orders.create(newOrderData);
 
-    res.status(201).json({ id: orderId });
+    // *** INICIO DE LA CORRECCIÓN ***
+    // 1. Busca la orden recién creada para obtener todos sus datos.
+    const createdOrder = db.orders.getById(orderId);
+
+    // 2. Control de error por si la orden no se encuentra.
+    if (!createdOrder) {
+      return res
+        .status(500)
+        .json({ message: "La orden fue creada pero no pudo ser encontrada." });
+    }
+
+    // 3. Devuelve el ID y el objeto 'order' completo.
+    res.status(201).json({ id: orderId, order: createdOrder });
+    // *** FIN DE LA CORRECCIÓN ***
   } catch (error) {
     console.error("Error creating transfer order:", error);
     res

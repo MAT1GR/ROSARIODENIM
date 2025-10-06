@@ -1,6 +1,8 @@
-import type { Database } from 'better-sqlite3';
-import bcrypt from 'bcryptjs';
-import { dbConnection } from './connection';
+// mat1gr/rosariodenim/ROSARIODENIM-0a9e948297937bd8aefc1890579b3a59f99d6fdc/src/lib/db/init.ts
+
+import type { Database } from "better-sqlite3";
+import bcrypt from "bcryptjs";
+import { dbConnection } from "./connection";
 
 export const initializeDatabase = () => {
   createTables(dbConnection);
@@ -97,23 +99,34 @@ const createTables = (db: Database) => {
 };
 
 const seedInitialData = (db: Database) => {
-  const adminExists = db.prepare('SELECT COUNT(*) as count FROM admin_users').get() as { count: number };
+  const adminExists = db
+    .prepare("SELECT COUNT(*) as count FROM admin_users")
+    .get() as { count: number };
   if (adminExists.count === 0) {
-    const hashedPassword = bcrypt.hashSync('admin123', 10);
-    db.prepare(`
+    const hashedPassword = bcrypt.hashSync("admin123", 10);
+    db.prepare(
+      `
       INSERT INTO admin_users (username, password, email, role)
       VALUES (?, ?, ?, ?)
-    `)
-    .run('grigomati@gmail.com', hashedPassword, 'admin@rosariodenim.com', 'super_admin');
-    console.log('✅ Default admin user created.');
+    `
+    ).run(
+      "grigomati@gmail.com",
+      hashedPassword,
+      "admin@rosariodenim.com",
+      "super_admin"
+    );
+    console.log("✅ Default admin user created.");
   }
-  const settingsExist = db.prepare('SELECT COUNT(*) as count FROM site_settings').get() as { count: number };
+  const settingsExist = db
+    .prepare("SELECT COUNT(*) as count FROM site_settings")
+    .get() as { count: number };
   if (settingsExist.count === 0) {
-      const stmt = db.prepare('INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)');
-      stmt.run('site_name', 'Rosario Denim');
-      stmt.run('contact_email', 'hola@rosariodenim.com');
-      stmt.run('contact_phone', '+54 9 341 123-4567');
-      console.log('✅ Default site settings created.');
+    const stmt = db.prepare(
+      "INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)"
+    );
+    stmt.run("site_name", "Rosario Denim");
+    stmt.run("contact_email", "hola@rosariodenim.com");
+    stmt.run("contact_phone", "+54 9 341 123-4567");
+    console.log("✅ Default site settings created.");
   }
 };
-
