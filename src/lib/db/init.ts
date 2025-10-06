@@ -83,6 +83,17 @@ const createTables = (db: Database) => {
         value TEXT
     );
   `);
+
+  try {
+    db.exec("ALTER TABLE orders ADD COLUMN customer_phone TEXT;");
+  } catch (error: any) {
+    if (!error.message.includes("duplicate column name")) throw error;
+  }
+  try {
+    db.exec("ALTER TABLE orders ADD COLUMN customer_doc_number TEXT;");
+  } catch (error: any) {
+    if (!error.message.includes("duplicate column name")) throw error;
+  }
 };
 
 const seedInitialData = (db: Database) => {

@@ -44,7 +44,8 @@ export const OrdersTab: React.FC = () => {
     };
 
     const statusOptions = [
-        { value: 'pending', label: 'Pendiente', icon: Package, color: 'yellow' },
+        { value: 'pending_payment', label: 'Pendiente de Pago', icon: Package, color: 'yellow' },
+        { value: 'paid', label: 'Pagado', icon: CheckCircle, color: 'green' },
         { value: 'shipped', label: 'Enviado', icon: Truck, color: 'blue' },
         { value: 'delivered', label: 'Entregado', icon: CheckCircle, color: 'green' },
         { value: 'cancelled', label: 'Cancelado', icon: XCircle, color: 'red' },

@@ -52,12 +52,11 @@ const CheckoutPage: React.FC = () => {
       } finally {
         setIsLoading(false);
       }
-    } else if (paymentMethod === "transferencia") {
-      try {
-        const response = await fetch("/api/orders/create-transfer-order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+          } else if (paymentMethod === "transferencia") {
+          try {
+            const response = await fetch("/api/payments/create-transfer-order", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },          body: JSON.stringify({
             items: cartItems,
             shippingInfo: shippingInfo,
             shipping: selectedShipping,

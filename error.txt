@@ -1,0 +1,13 @@
+[0] Error creating transfer order: SqliteError: table orders has no column named customer_doc_number
+[0]     at Database.prepare (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\better-sqlite3\lib\methods\wrappers.js:5:21)
+[0]     at Object.create (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\src\lib\db\services.ts:241:37)
+[0]     at createTransferOrder (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\server\controllers\paymentController.ts:170:15)
+[0]     at Layer.handleRequest (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\lib\layer.js:152:17)
+[0]     at next (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\lib\route.js:157:13)
+[0]     at Route.dispatch (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\lib\route.js:117:3)
+[0]     at handle (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\index.js:435:11)
+[0]     at Layer.handleRequest (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\lib\layer.js:152:17)
+[0]     at C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\index.js:295:15
+[0]     at processParams (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\index.js:582:12) {
+[0]   code: 'SQLITE_ERROR'
+[0] }

@@ -244,9 +244,24 @@ export const orderService = {
             VALUES (@id, @customerId, @customerName, @customerEmail, @customerPhone, @customerDocNumber, @items, @total, @status, @createdAt,
                     @shippingStreetName, @shippingStreetNumber, @shippingApartment, @shippingDescription, @shippingCity, @shippingPostalCode, @shippingProvince, @shippingCost)
         `).run({
-            ...order,
+            id: order.id,
+            customerId: order.customerId,
+            customerName: order.customerName,
+            customerEmail: order.customerEmail,
+            customerPhone: order.customerPhone,
+            customerDocNumber: order.customerDocNumber,
             items: JSON.stringify(order.items),
+            total: order.total,
+            status: order.status,
             createdAt: order.createdAt.toISOString(),
+            shippingStreetName: order.shippingStreetName,
+            shippingStreetNumber: order.shippingStreetNumber,
+            shippingApartment: order.shippingApartment,
+            shippingDescription: order.shippingDescription,
+            shippingCity: order.shippingCity,
+            shippingPostalCode: order.shippingPostalCode,
+            shippingProvince: order.shippingProvince,
+            shippingCost: order.shippingCost,
         });
         return result.lastInsertRowid as number;
     },
