@@ -112,6 +112,7 @@ const processPayment = async (req: Request, res: Response) => {
         shippingPostalCode: order.shippingInfo.postalCode,
         shippingProvince: order.shippingInfo.province,
         shippingCost: order.shippingCost || 0,
+        shippingName: order.shipping?.name || 'No especificado',
         createdAt: new Date(result.date_created!),
       });
 
@@ -184,6 +185,7 @@ const createTransferOrder = async (req: Request, res: Response) => {
       shippingPostalCode: shippingInfo.postalCode,
       shippingProvince: shippingInfo.province,
       shippingCost: shipping.cost || 0,
+      shippingName: shipping.name || 'No especificado',
       createdAt: new Date(),
     };
 

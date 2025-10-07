@@ -11,11 +11,11 @@ export default {
         "gris-oscuro": "#41403E",
 
         // Mapeo a los nombres de tema existentes para una actualización global
-        "brand-bg": "#F7F5F2",
+        "brand-bg": "#ffffffff",
         "brand-primary-text": "#41403E",
         "brand-secondary-text": "#41403E", // Se usa gris oscuro para legibilidad
         "brand-accent": "#B5651D",
-        "brand-light": "#F7F5F2",
+        "brand-light": "#ffffffff",
         "brand-border": "#D3CFC3", // Arena para bordes
       },
       fontFamily: {

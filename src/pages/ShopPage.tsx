@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
+import SkeletonCard from '../components/SkeletonCard'; // Importar el nuevo componente
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
 
 type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'popular';
@@ -33,6 +34,8 @@ const ShopPage: React.FC = () => {
       }
 
       try {
+        // Simular un poco de retraso para ver el skeleton
+        await new Promise(res => setTimeout(res, 500)); 
         const response = await fetch(`/api/products?${params.toString()}`);
         const data = await response.json();
         setProducts(data.products);
@@ -54,11 +57,11 @@ const ShopPage: React.FC = () => {
   const categories = ['Mom Jeans', 'Wide Leg', 'Flare', 'Straight'];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-white py-8">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="lg:w-1/4">
-            <div className="bg-white p-6 rounded-lg shadow-sm sticky top-28">
+            <div className="bg-white p-6 rounded-lg border border-gray-200 sticky top-28">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold">Filtros</h2>
                 <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden p-2 text-gray-600"><Filter size={20} /></button>
@@ -83,7 +86,7 @@ const ShopPage: React.FC = () => {
               <select
                 value={filters.sortBy}
                 onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#D8A7B1]"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="newest">Novedades</option>
                 <option value="popular">Más Populares</option>
@@ -117,15 +120,5 @@ const ShopPage: React.FC = () => {
     </div>
   );
 };
-
-const SkeletonCard = () => (
-    <div className="bg-white rounded-lg overflow-hidden shadow-sm animate-pulse">
-        <div className="aspect-[3/4] bg-gray-200"></div>
-        <div className="p-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-            <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-        </div>
-    </div>
-);
 
 export default ShopPage;
