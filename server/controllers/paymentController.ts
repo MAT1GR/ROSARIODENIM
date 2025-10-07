@@ -175,7 +175,7 @@ const createTransferOrder = (req: Request, res: Response) => {
       customerDocNumber: shippingInfo.docNumber || "",
       items: items,
       total: total,
-      status: "pending_payment", // Estado especial para transferencias
+      status: "pending", // Estado especial para transferencias
       shippingStreetName: shippingInfo.streetName,
       shippingStreetNumber: shippingInfo.streetNumber,
       shippingApartment: shippingInfo.apartment,
