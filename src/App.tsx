@@ -36,7 +36,6 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/tienda" element={<ShopPage />} />
         <Route path="/producto/:id" element={<ProductPage />} />
-        <Route path="/checkout/info" element={<CheckoutInfoPage />} />
         <Route path="/shipping" element={<ShippingPage />} />
         <Route path="/tallas" element={<SizeGuidePage />} />
         <Route path="/admin" element={<AdminPage />} />

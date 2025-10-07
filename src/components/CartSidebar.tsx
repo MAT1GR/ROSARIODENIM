@@ -140,7 +140,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
               </p>
 
               <Link
-                to="/checkout/info"
+                to="/checkout"
                 onClick={onClose}
                 className="w-full block text-center bg-brand-primary hover:bg-brand-secondary text-white py-3 rounded-lg text-lg font-bold transition-colors"
               >

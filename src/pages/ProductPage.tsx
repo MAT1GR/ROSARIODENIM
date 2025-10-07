@@ -117,7 +117,7 @@ const ProductPage: React.FC = () => {
   const handleBuyNow = () => {
     if (product && selectedSize && isInStock) {
       addToCart(product, selectedSize, quantity);
-      navigate("/checkout/info");
+      navigate("/checkout");
     }
   };
 

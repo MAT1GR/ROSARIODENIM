@@ -141,7 +141,7 @@ const processPayment = async (req: Request, res: Response) => {
 };
 
 // --- FUNCIÓN PARA TRANSFERENCIAS (CORREGIDA) ---
-const createTransferOrder = (req: Request, res: Response) => {
+const createTransferOrder = async (req: Request, res: Response) => {
   const { items, shippingInfo, shipping, total } = req.body as {
     items: CartItem[];
     shippingInfo: any;
@@ -162,9 +162,9 @@ const createTransferOrder = (req: Request, res: Response) => {
     };
 
     // Crear o encontrar cliente
-    const customerId = db.customers.findOrCreate(customerData);
+    const customerId = await db.customers.findOrCreate(customerData);
     // Actualizar stock
-    db.products.updateProductStock(items);
+    await db.products.updateProductStock(items);
 
     const newOrderData = {
       id: orderId,
@@ -188,11 +188,11 @@ const createTransferOrder = (req: Request, res: Response) => {
     };
 
     // Crear la orden en la base de datos
-    db.orders.create(newOrderData);
+    await db.orders.create(newOrderData);
 
     // *** INICIO DE LA CORRECCIÓN ***
     // 1. Busca la orden recién creada para obtener todos sus datos.
-    const createdOrder = db.orders.getById(orderId);
+    const createdOrder = await db.orders.getById(orderId);
 
     // 2. Control de error por si la orden no se encuentra.
     if (!createdOrder) {

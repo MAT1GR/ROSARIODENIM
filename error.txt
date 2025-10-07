@@ -1,13 +1,115 @@
-[0] Error creating transfer order: SqliteError: table orders has no column named customer_doc_number
-[0]     at Database.prepare (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\better-sqlite3\lib\methods\wrappers.js:5:21)
-[0]     at Object.create (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\src\lib\db\services.ts:241:37)
-[0]     at createTransferOrder (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\server\controllers\paymentController.ts:170:15)
-[0]     at Layer.handleRequest (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\lib\layer.js:152:17)
-[0]     at next (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\lib\route.js:157:13)
-[0]     at Route.dispatch (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\lib\route.js:117:3)
-[0]     at handle (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\index.js:435:11)
-[0]     at Layer.handleRequest (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\lib\layer.js:152:17)
-[0]     at C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\index.js:295:15
-[0]     at processParams (C:\Users\Consultar\Documents\dnimm\ROSARIODENIM\node_modules\router\index.js:582:12) {
-[0]   code: 'SQLITE_ERROR'
-[0] }
+Panel de Depuración:
+{
+  "step": "4. Datos JSON recibidos",
+  "payload": {
+    "items": [
+      {
+        "product": {
+          "id": "1",
+          "name": "Pantalón Ecole",
+          "price": 275000,
+          "images": [
+            "/uploads/newImages-1759849534964-286580141.png",
+            "/uploads/newImages-1759849534971-233058804.png",
+            "/uploads/newImages-1759849534976-922337368.png"
+          ],
+          "video": null,
+          "category": "Jeans",
+          "description": "Jean vintage 90s",
+          "material": "Denim Rigido",
+          "rise": "Medio",
+          "fit": "Recto",
+          "sizes": {
+            "36": {
+              "available": true,
+              "stock": 8,
+              "measurements": "70cmmmm"
+            }
+          },
+          "isNew": false,
+          "isBestSeller": false
+        },
+        "size": "36",
+        "quantity": 1
+      }
+    ],
+    "shippingInfo": {
+      "email": "admin@laboratorio.com",
+      "postalCode": "2000",
+      "firstName": "Matias",
+      "lastName": "Grigolo",
+      "phone": "3413981584",
+      "streetName": "dgddgdf",
+      "streetNumber": "4334",
+      "apartment": "",
+      "neighborhood": "",
+      "city": "Rosario",
+      "province": "Santa Fe",
+      "docNumber": "",
+      "description": ""
+    },
+    "shipping": {
+      "name": "Cadete (Solo Rosario)",
+      "cost": 4500,
+      "id": "cadete"
+    },
+    "total": 251550
+  },
+  "response": {
+    "status": 201,
+    "ok": true
+  },
+  "orderData": {
+    "id": "TRANSFER-1759852394867",
+    "order": {
+      "id": "TRANSFER-1759852394867",
+      "customerId": "1",
+      "customerName": "Matias Grigolo",
+      "customerEmail": "admin@laboratorio.com",
+      "customerPhone": "3413981584",
+      "customerDocNumber": "",
+      "items": [
+        {
+          "product": {
+            "id": "1",
+            "name": "Pantalón Ecole",
+            "price": 275000,
+            "images": [
+              "/uploads/newImages-1759849534964-286580141.png",
+              "/uploads/newImages-1759849534971-233058804.png",
+              "/uploads/newImages-1759849534976-922337368.png"
+            ],
+            "video": null,
+            "category": "Jeans",
+            "description": "Jean vintage 90s",
+            "material": "Denim Rigido",
+            "rise": "Medio",
+            "fit": "Recto",
+            "sizes": {
+              "36": {
+                "available": true,
+                "stock": 8,
+                "measurements": "70cmmmm"
+              }
+            },
+            "isNew": false,
+            "isBestSeller": false
+          },
+          "size": "36",
+          "quantity": 1
+        }
+      ],
+      "total": 251550,
+      "status": "pending",
+      "shippingStreetName": "dgddgdf",
+      "shippingStreetNumber": "4334",
+      "shippingApartment": "",
+      "shippingDescription": "",
+      "shippingCity": "Rosario",
+      "shippingPostalCode": "2000",
+      "shippingProvince": "Santa Fe",
+      "shippingCost": 4500,
+      "createdAt": "2025-10-07T15:53:14.867Z"
+    }
+  }
+}
