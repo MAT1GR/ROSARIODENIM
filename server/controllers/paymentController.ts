@@ -63,7 +63,7 @@ const createMercadoPagoPreference = async (req: Request, res: Response) => {
 
     const preference = new Preference(client);
     const result = await preference.create({ body: preferenceBody });
-    res.json({ preferenceId: result.id });
+    res.json({ preferenceId: result.id, init_point: result.init_point });
   } catch (error: any) {
     console.error(
       "Error al crear la preferencia:",

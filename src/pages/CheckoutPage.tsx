@@ -4,12 +4,6 @@ import { Lock, CreditCard, Banknote } from "lucide-react";
 import { useCart } from "../hooks/useCart";
 import { CartItem as CartItemType } from "../types";
 
-declare global {
-  interface Window {
-    MercadoPago: any;
-  }
-}
-
 interface ShippingOption {
   id: string;
   name: string;
@@ -18,7 +12,7 @@ interface ShippingOption {
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const { cartItems, getTotalPrice } = useCart(); // Se quita clearCart de aquí
+  const { cartItems, getTotalPrice } = useCart();
   const subtotal = getTotalPrice();
 
   const [formData, setFormData] = useState({
@@ -43,7 +37,6 @@ const CheckoutPage: React.FC = () => {
   const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState("mercado-pago");
-  const [preferenceId, setPreferenceId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -110,15 +103,14 @@ const CheckoutPage: React.FC = () => {
         });
         if (!response.ok) throw new Error("Error al crear la preferencia de pago.");
         const data = await response.json();
-        if (data.preferenceId) {
-          setPreferenceId(data.preferenceId);
+        if (data.init_point) {
+          window.location.href = data.init_point; // Redirección inmediata
         } else {
-          throw new Error("No se recibió el ID de preferencia.");
+          throw new Error("No se recibió la URL de pago.");
         }
       } catch (err: any) {
         setError(err.message);
-      } finally {
-        setIsLoading(false);
+        setIsLoading(false); // Asegurarse de detener la carga en caso de error
       }
     } else if (paymentMethod === "transferencia") {
       try {
@@ -140,7 +132,6 @@ const CheckoutPage: React.FC = () => {
 
         const orderData = await response.json();
         
-        // La navegación es ahora la única responsabilidad aquí
         navigate(`/pedido-pendiente/${orderData.id}`, {
           state: { order: orderData.order },
         });
@@ -152,21 +143,6 @@ const CheckoutPage: React.FC = () => {
       }
     }
   };
-
-  useEffect(() => {
-    if (preferenceId && window.MercadoPago) {
-      const mp = new window.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY, { locale: "es-AR" });
-      const container = document.querySelector(".cho-container");
-      if (container) container.innerHTML = "";
-      mp.checkout({
-        preference: { id: preferenceId },
-        render: {
-          container: ".cho-container",
-          label: "Pagar",
-        },
-      });
-    }
-  }, [preferenceId]);
 
   const isFormComplete = formData.email && formData.firstName && formData.lastName && formData.streetName && formData.streetNumber && formData.phone && selectedShipping;
   const displayedTotal = paymentMethod === "transferencia" ? totalWithDiscount : total;
@@ -262,20 +238,9 @@ const CheckoutPage: React.FC = () => {
 
               {error && (<div className="my-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm"><strong>Error:</strong> {error}</div>)}
 
-              {paymentMethod === "mercado-pago" ? (
-                <>
-                  {!preferenceId && (
-                    <button onClick={handleFinalizeOrder} disabled={isLoading || !isFormComplete} className="w-full mt-6 bg-black text-white py-3 rounded-lg text-lg font-bold transition-colors hover:opacity-80 disabled:opacity-50">
-                      {isLoading ? "Procesando..." : "Pagar con Mercado Pago"}
-                    </button>
-                  )}
-                  <div className={`cho-container transition-opacity duration-500 ${preferenceId ? "opacity-100" : "opacity-0 h-0"}`}></div>
-                </>
-              ) : (
-                <button onClick={handleFinalizeOrder} disabled={isLoading || !isFormComplete} className="w-full mt-6 bg-black text-white py-3 rounded-lg text-lg font-bold transition-colors hover:opacity-80 disabled:opacity-50">
-                  {isLoading ? "Generando orden..." : "Finalizar Pedido"}
-                </button>
-              )}
+              <button onClick={handleFinalizeOrder} disabled={isLoading || !isFormComplete} className="w-full mt-6 bg-black text-white py-3 rounded-lg text-lg font-bold transition-colors hover:opacity-80 disabled:opacity-50">
+                {isLoading ? "Procesando..." : paymentMethod === 'mercado-pago' ? 'Ir a Pagar' : 'Finalizar Pedido'}
+              </button>
             </div>
           </div>
         </div>
