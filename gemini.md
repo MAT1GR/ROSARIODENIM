@@ -1,0 +1,1 @@
+hace lo que te pido, no quiero que trates de usar comandos para abrir o leer como npm install o npm run dev o npm start, lo hago yo

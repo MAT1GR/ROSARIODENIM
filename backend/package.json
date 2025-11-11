@@ -1,0 +1,62 @@
+{
+  "name": "vite-react-typescript-starter",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "// ---- DESARROLLO (Tus scripts originales) ----": "",
+    "dev": "concurrently \"npm run server\" \"vite --host\"",
+    "server": "npx tsx watch server/index.ts",
+    
+    "// ---- PRODUCCIÓN (Para cPanel) ----": "",
+    "start": "node dist/server/index.js",
+    "build": "npm run build:server && npm run build:client",
+    "build:client": "vite build",
+    "build:server": "tsc",
+    
+    "// ---- OTROS (Tus scripts originales) ----": "",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
+    "@types/react-beautiful-dnd": "^13.1.8",
+    "@types/react-router-dom": "^5.3.3",
+    "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^12.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.344.0",
+    "mercadopago": "^2.8.0",
+    "multer": "^2.0.2",
+    "nodemailer": "^6.9.14",
+    "react": "^18.3.1",
+    "react-beautiful-dnd": "^13.1.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.8.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/nodemailer": "^6.4.15",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.18",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.9.1",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.11",
+    "globals": "^15.9.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.3.0",
+    "vite": "^5.4.2"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    // --- Módulo y Target ---
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+
+    // --- Rutas de Build ---
+    "outDir": "./dist",
+    "rootDir": ".",
+
+    // --- Opciones Estrictas y de Compatibilidad ---
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "server/**/*.ts",
+    "src/lib/**/*.ts",
+    "src/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/components", // Excluimos el frontend de React
+    "src/pages",
+    "src/App.tsx",
+    "src/main.tsx"
+  ]
+}
