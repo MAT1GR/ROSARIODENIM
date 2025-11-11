@@ -1,10 +1,11 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import path from 'path'; // <-- Ya lo tienes
+import path from 'path'; // <-- Importante
 
+// --- Tus importaciones de rutas ---
 import authRoutes from './routes/auth';
-import productRoutes from './routes/products'; // <-- ESTA ES LA LÍNEA CLAVE
+import productRoutes from './routes/products';
 import categoryRoutes from './routes/categories';
 import orderRoutes from './routes/orders';
 import customerRoutes from './routes/customers';
@@ -17,24 +18,27 @@ import paymentRoutes from './controllers/paymentController';
 
 const app = express();
 
-// --- MODIFICACIÓN 1: Configura CORS para producción ---
-// Reemplaza app.use(cors()); con esto:
+// --- Configuración de CORS ---
 app.use(cors({ origin: 'https://denimrosario.com.ar' }));
-
 app.use(express.json());
 
-// --- MODIFICACIÓN 2: Servir los archivos estáticos del frontend ---
-// Esta línea le dice a Express que sirva CUALQUIER archivo estático
-// que se encuentre en la carpeta 'dist' que movimos en el Paso 2.
-// '__dirname' es la carpeta actual ('/server'), así que '..' sube un nivel.
-app.use(express.static(path.join(__dirname, '..', 'dist')));
+// --- SERVIR ARCHIVOS ESTÁTICOS (CORREGIDO) ---
 
-// --- MODIFICACIÓN 3: Cambia el puerto para producción (Recomendado) ---
-// Esto permite que el hosting (cPanel) elija el puerto.
+// 1. Servir el Frontend (React)
+// __dirname será '.../dist/server'
+// Subimos un nivel ('..') para llegar a '.../dist'
+app.use(express.static(path.join(__dirname, '..')));
+
+// 2. Servir las Imágenes (public/uploads)
+// Subimos dos niveles ('..', '..') desde '.../dist/server' para llegar a la RAÍZ
+// Y de ahí entramos a 'public'.
+app.use(express.static(path.join(__dirname, '..', '..', 'public')));
+
+
+// --- Puerto de Producción ---
 const PORT = process.env.PORT || 3001;
 
 // --- API Routes ---
-// Todas tus rutas API /api/... deben ir ANTES del "catch-all"
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -47,13 +51,10 @@ app.use('/api/testimonials', testimonialsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments', paymentRoutes);
 
-// --- MODIFICACIÓN 4: El "Catch-All" para React ---
-// Esto es VITAL. Debe ir DESPUÉS de todas tus rutas API.
-// Le dice al servidor que para CUALQUIER otra ruta (ej: /pago-exitoso, /tienda/producto/123)
-// que no sea una API, debe enviar el 'index.html' de React.
-// React Router se encargará de mostrar la página correcta en el cliente.
+// --- "Catch-All" para React (CORREGIDO) ---
+// Esto debe apuntar al index.html que está en '.../dist'
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
 app.listen(PORT, () => {

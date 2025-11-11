@@ -2,11 +2,11 @@
 
 import type { Database } from "better-sqlite3";
 import bcrypt from "bcryptjs";
-import { dbConnection } from "./connection";
+import { db } from "./connection";
 
 export const initializeDatabase = () => {
-  createTables(dbConnection);
-  seedInitialData(dbConnection);
+  createTables(db);
+  seedInitialData(db);
 };
 
 const createTables = (db: Database) => {

@@ -1,7 +1,7 @@
 // mat1gr/rosariodenim/ROSARIODENIM-0a9e948297937bd8aefc1890579b3a59f99d6fdc/src/lib/db/services.ts
 
 import bcrypt from "bcryptjs";
-import { dbConnection } from "./connection";
+import { db } from "./connection";
 import {
   Product,
   AdminUser,
@@ -84,7 +84,7 @@ export const authService = {
     username: string,
     password: string
   ): Promise<AdminUser | null> => {
-    const user = dbConnection
+    const user = db
       .prepare("SELECT * FROM admin_users WHERE username = ?")
       .get(username) as AdminUser | undefined;
     if (user && (await bcrypt.compare(password, user.password))) {
@@ -99,13 +99,13 @@ export const authService = {
     oldPassword: string,
     newPassword: string
   ): Promise<boolean> => {
-    const user = dbConnection
+    const user = db
       .prepare("SELECT * FROM admin_users WHERE username = ?")
       .get(username) as AdminUser | undefined;
 
     if (user && (await bcrypt.compare(oldPassword, user.password))) {
       const hashedNewPassword = bcrypt.hashSync(newPassword, 10);
-      dbConnection
+      db
         .prepare("UPDATE admin_users SET password = ? WHERE username = ?")
         .run(hashedNewPassword, username);
       return true;
@@ -138,11 +138,11 @@ export const productService = {
     const offset = (page - 1) * limit;
     const productsQuery = `SELECT * FROM products ${where} ${orderBy} LIMIT ? OFFSET ?`;
     const countQuery = `SELECT COUNT(*) as total FROM products ${where}`;
-    const products = dbConnection
+    const products = db
       .prepare(productsQuery)
       .all(...params, limit, offset)
       .map(parseProduct);
-    const totalResult = dbConnection.prepare(countQuery).get(...params) as {
+    const totalResult = db.prepare(countQuery).get(...params) as {
       total: number;
     };
     return {
@@ -154,14 +154,14 @@ export const productService = {
   },
 
   getAllAdmin: (): Product[] => {
-    const rows = dbConnection
+    const rows = db
       .prepare("SELECT * FROM products WHERE is_active = 1 ORDER BY id DESC")
       .all();
     return rows.map(parseProduct);
   },
 
   getNewest: (limit: number = 3): Product[] => {
-    const rows = dbConnection
+    const rows = db
       .prepare(
         `SELECT * FROM products WHERE is_active = 1 AND is_new = 1 ORDER BY id DESC LIMIT ?`
       )
@@ -170,7 +170,7 @@ export const productService = {
   },
 
   getBestsellers: (limit: number = 3): Product[] => {
-    const rows = dbConnection
+    const rows = db
       .prepare(
         `SELECT * FROM products WHERE is_active = 1 AND is_best_seller = 1 ORDER BY id DESC LIMIT ?`
       )
@@ -179,13 +179,13 @@ export const productService = {
   },
 
   getById: (id: string | number): Product | null => {
-    const row = dbConnection
+    const row = db
       .prepare("SELECT * FROM products WHERE id = ? AND is_active = 1")
       .get(id);
     return row ? parseProduct(row) : null;
   },
   create: (product: Omit<Product, "id">): number => {
-    const result = dbConnection
+    const result = db
       .prepare(
         `
       INSERT INTO products (name, price, images, video, category, description, material, rise, fit, sizes, is_new, is_best_seller)
@@ -203,7 +203,7 @@ export const productService = {
     return result.lastInsertRowid as number;
   },
   update: (id: string, data: Partial<Omit<Product, "id">>): boolean => {
-    const stmt = dbConnection.prepare(`
+    const stmt = db.prepare(`
       UPDATE products SET
         name = @name, price = @price, images = @images, video = @video, category = @category,
         description = @description, material = @material, rise = @rise, fit = @fit,
@@ -223,21 +223,21 @@ export const productService = {
     return result.changes > 0;
   },
   delete: (id: string): boolean => {
-    const result = dbConnection
+    const result = db
       .prepare("UPDATE products SET is_active = 0 WHERE id = ?")
       .run(id);
     return result.changes > 0;
   },
 
   updateProductStock: (items: CartItem[]): void => {
-    const updateStmt = dbConnection.prepare(
+    const updateStmt = db.prepare(
       "UPDATE products SET sizes = ? WHERE id = ?"
     );
-    const getProductStmt = dbConnection.prepare(
+    const getProductStmt = db.prepare(
       "SELECT sizes FROM products WHERE id = ?"
     );
 
-    const transaction = dbConnection.transaction((cartItems: CartItem[]) => {
+    const transaction = db.transaction((cartItems: CartItem[]) => {
       for (const item of cartItems) {
         const product = getProductStmt.get(item.product.id) as
           | { sizes: string }
@@ -257,7 +257,7 @@ export const productService = {
 
 export const categoryService = {
   getAll: (): Category[] => {
-    const rows = dbConnection
+    const rows = db
       .prepare(
         "SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC"
       )
@@ -265,13 +265,13 @@ export const categoryService = {
     return rows.map(parseCategory);
   },
   getById: (id: number): Category | null => {
-    const row = dbConnection
+    const row = db
       .prepare("SELECT * FROM categories WHERE id = ?")
       .get(id);
     return row ? parseCategory(row) : null;
   },
   create: (category: Omit<Category, "id" | "is_active">): number => {
-    const result = dbConnection
+    const result = db
       .prepare(
         "INSERT INTO categories (name, slug, description, image, sort_order) VALUES (@name, @slug, @description, @image, @sort_order)"
       )
@@ -285,7 +285,7 @@ export const categoryService = {
     return result.lastInsertRowid as number;
   },
   update: (id: number, data: Partial<Omit<Category, "id">>): boolean => {
-    const result = dbConnection
+    const result = db
       .prepare(
         "UPDATE categories SET name = @name, slug = @slug, description = @description, image = @image, sort_order = @sort_order WHERE id = @id"
       )
@@ -300,7 +300,7 @@ export const categoryService = {
     return result.changes > 0;
   },
   delete: (id: number): boolean => {
-    const result = dbConnection
+    const result = db
       .prepare("UPDATE categories SET is_active = 0 WHERE id = ?")
       .run(id);
     return result.changes > 0;
@@ -311,7 +311,7 @@ export const orderService = {
   create: (
     order: Omit<Order, "id" | "customerId"> & { customerId: string }
   ): number => {
-    const result = dbConnection
+    const result = db
       .prepare(
         `
             INSERT INTO orders (customer_id, customer_name, customer_email, customer_phone, customer_doc_number, items, total, status, created_at, 
@@ -343,19 +343,19 @@ export const orderService = {
     return result.lastInsertRowid as number;
   },
   getAll: (): Order[] => {
-    const rows = dbConnection
+    const rows = db
       .prepare("SELECT * FROM orders ORDER BY created_at DESC")
       .all();
     return rows.map(parseOrder);
   },
   updateStatus: (id: string, status: string): boolean => {
-    const result = dbConnection
+    const result = db
       .prepare("UPDATE orders SET status = ? WHERE id = ?")
       .run(status, id);
     return result.changes > 0;
   },
   getByCustomerId: (customerId: string): CustomerOrder[] => {
-    const rows = dbConnection
+    const rows = db
       .prepare(
         "SELECT id, items, total, status, created_at FROM orders WHERE customer_id = ? ORDER BY created_at DESC"
       )
@@ -363,7 +363,7 @@ export const orderService = {
     return rows.map(parseCustomerOrder);
   },
   getById: (id: string): Order | null => {
-    const row = dbConnection
+    const row = db
       .prepare("SELECT * FROM orders WHERE id = ?")
       .get(id);
     return row ? parseOrder(row) : null;
@@ -377,12 +377,12 @@ export const customerService = {
     phone?: string;
     totalSpent: number;
   }): number => {
-    let existingCustomer = dbConnection
+    let existingCustomer = db
       .prepare("SELECT id, total_spent FROM customers WHERE email = ?")
       .get(customer.email) as { id: number; total_spent: number } | undefined;
 
     if (existingCustomer) {
-      dbConnection
+      db
         .prepare(
           "UPDATE customers SET name = ?, phone = ?, order_count = order_count + 1, total_spent = ? WHERE id = ?"
         )
@@ -394,7 +394,7 @@ export const customerService = {
         );
       return existingCustomer.id;
     } else {
-      const result = dbConnection
+      const result = db
         .prepare(
           "INSERT INTO customers (name, email, phone, order_count, total_spent) VALUES (?, ?, ?, 1, ?)"
         )
@@ -408,13 +408,13 @@ export const customerService = {
     }
   },
   getAll: (): Customer[] => {
-    const rows = dbConnection
+    const rows = db
       .prepare("SELECT * FROM customers ORDER BY created_at DESC")
       .all();
     return rows.map(parseCustomer);
   },
   getById: (id: string): Customer | null => {
-    const row = dbConnection
+    const row = db
       .prepare("SELECT * FROM customers WHERE id = ?")
       .get(id);
     return row ? parseCustomer(row) : null;
@@ -423,7 +423,7 @@ export const customerService = {
 
 export const settingsService = {
   getAll: (): SiteSettings => {
-    const rows = dbConnection
+    const rows = db
       .prepare("SELECT key, value FROM site_settings")
       .all() as { key: string; value: string }[];
     return rows.reduce((acc, { key, value }) => {
@@ -432,10 +432,10 @@ export const settingsService = {
     }, {} as SiteSettings);
   },
   update: (settings: Record<string, string>): void => {
-    const stmt = dbConnection.prepare(
+    const stmt = db.prepare(
       "INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)"
     );
-    const transaction = dbConnection.transaction((settingsObject) => {
+   const transaction = db.transaction((settingsObject: any) => {
       for (const [key, value] of Object.entries(settingsObject)) {
         stmt.run(key, value);
       }
@@ -447,21 +447,21 @@ export const settingsService = {
 export const dashboardService = {
   getStats: () => {
     const productCount = (
-      dbConnection
+      db
         .prepare("SELECT COUNT(*) as count FROM products WHERE is_active = 1")
         .get() as { count: number }
     ).count;
     const orderCount = (
-      dbConnection.prepare("SELECT COUNT(*) as count FROM orders").get() as {
+      db.prepare("SELECT COUNT(*) as count FROM orders").get() as {
         count: number;
       }
     ).count;
     const customerCount = (
-      dbConnection.prepare("SELECT COUNT(*) as count FROM customers").get() as {
+      db.prepare("SELECT COUNT(*) as count FROM customers").get() as {
         count: number;
       }
     ).count;
-    const totalRevenueResult = dbConnection
+    const totalRevenueResult = db
       .prepare(
         "SELECT SUM(total) as total FROM orders WHERE status = 'delivered'"
       )
@@ -476,13 +476,13 @@ export const dashboardService = {
     };
   },
   getRecentOrders: (limit: number = 5): Order[] => {
-    const rows = dbConnection
+    const rows = db
       .prepare("SELECT * FROM orders ORDER BY created_at DESC LIMIT ?")
       .all(limit);
     return rows.map(parseOrder);
   },
   getRecentCustomers: (limit: number = 5): Customer[] => {
-    const rows = dbConnection
+    const rows = db
       .prepare("SELECT * FROM customers ORDER BY created_at DESC LIMIT ?")
       .all(limit);
     return rows.map(parseCustomer);
