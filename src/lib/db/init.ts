@@ -1,7 +1,7 @@
 // src/lib/db/init.ts
 import type { Database } from "sqlite";
 import bcrypt from "bcryptjs";
-import { db } from "./connection";
+import { db } from "./connection.js";
 
 export const initializeDatabase = async () => {
   const database = await db;

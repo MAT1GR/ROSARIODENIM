@@ -1,6 +1,6 @@
 // src/lib/db/services.ts
 import bcrypt from "bcryptjs";
-import { db } from "./connection.js";
+import { db } from './connection.js';
 import {
   Product,
   AdminUser,

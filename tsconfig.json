@@ -3,14 +3,14 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Node",
+    "outDir": "./dist",
+    "rootDir": "./",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true,
-    "outDir": "./dist",
-    "rootDir": ".",
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "skipLibCheck": true
   },
   "include": ["server/**/*.ts", "src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
