@@ -1,15 +1,16 @@
 // src/lib/db/init.ts
 import type { Database } from "sqlite";
 import bcrypt from "bcryptjs";
-import { db } from "./connection.js";
+import { db } from "./connection";
 
 export const initializeDatabase = async () => {
-  await createTables(db);
-  await seedInitialData(db);
+  const database = await db;
+  await createTables(database);
+  await seedInitialData(database);
 };
 
-const createTables = async (db: Database) => {
-  await db.exec(`
+const createTables = async (database: Database) => {
+  await database.exec(`
     CREATE TABLE IF NOT EXISTS admin_users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
@@ -37,6 +38,7 @@ const createTables = async (db: Database) => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
     CREATE INDEX IF NOT EXISTS idx_product_category ON products (category);
 
     CREATE TABLE IF NOT EXISTS categories (
@@ -92,46 +94,43 @@ const createTables = async (db: Database) => {
     );
   `);
 
-  // Manejar alteraciones condicionales
-  for (const column of ["customer_phone", "customer_doc_number"]) {
+  // ALTER TABLE condicional (seguro)
+  for (const col of ["customer_phone", "customer_doc_number"]) {
     try {
-      await db.exec(`ALTER TABLE orders ADD COLUMN ${column} TEXT;`);
-    } catch (error: any) {
-      if (!error.message.includes("duplicate column name")) throw error;
+      await database.exec(`ALTER TABLE orders ADD COLUMN ${col} TEXT;`);
+    } catch (err: any) {
+      // sqlite devuelve un mensaje con "duplicate column name" cuando ya existe
+      if (!String(err?.message || "").includes("duplicate column name")) throw err;
     }
   }
 };
 
-const seedInitialData = async (db: Database) => {
-  const adminExists = await db.get<{ count: number }>(
+const seedInitialData = async (database: Database) => {
+  const adminExists = (await database.get<{ count: number }>(
     "SELECT COUNT(*) as count FROM admin_users"
-  );
-  if (!adminExists || adminExists.count === 0) {
+  )) || { count: 0 };
+
+  if (adminExists.count === 0) {
     const hashedPassword = bcrypt.hashSync("admin123", 10);
-    await db.run(
-      `
-      INSERT INTO admin_users (username, password, email, role)
-      VALUES (?, ?, ?, ?)
-    `,
+    await database.run(
+      `INSERT INTO admin_users (username, password, email, role) VALUES (?, ?, ?, ?)`,
       ["grigomati@gmail.com", hashedPassword, "admin@rosariodenim.com", "super_admin"]
     );
     console.log("✅ Default admin user created.");
   }
 
-  const settingsExist = await db.get<{ count: number }>(
+  const settingsExist = (await database.get<{ count: number }>(
     "SELECT COUNT(*) as count FROM site_settings"
-  );
-  if (!settingsExist || settingsExist.count === 0) {
+  )) || { count: 0 };
+
+  if (settingsExist.count === 0) {
     const settings = [
       ["site_name", "Rosario Denim"],
       ["contact_email", "hola@rosariodenim.com"],
       ["contact_phone", "+54 9 341 123-4567"],
     ];
     for (const [key, value] of settings) {
-      await db.run("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)", [
-        key,
-        value,
-      ]);
+      await database.run("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)", [key, value]);
     }
     console.log("✅ Default site settings created.");
   }

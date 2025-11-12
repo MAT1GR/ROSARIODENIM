@@ -6,11 +6,9 @@
   "scripts": {
     "dev": "concurrently \"npm run server\" \"vite --host\"",
     "server": "npx tsx watch server/index.ts",
-
     "build": "npm run build:server && npm run build:client",
     "build:server": "tsc",
     "build:client": "vite build",
-
     "start": "node dist/server/index.js",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -33,12 +31,18 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/multer": "^2.0.0",
     "@types/nodemailer": "^6.4.15",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.22",
     "concurrently": "^9.2.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3",
     "vite": "^5.4.2"
   }
