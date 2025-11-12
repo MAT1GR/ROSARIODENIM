@@ -1,16 +1,15 @@
-// mat1gr/rosariodenim/ROSARIODENIM-0a9e948297937bd8aefc1890579b3a59f99d6fdc/src/lib/db/init.ts
-
-import type { Database } from "better-sqlite3";
+// src/lib/db/init.ts
+import type { Database } from "sqlite";
 import bcrypt from "bcryptjs";
-import { db } from "./connection";
+import { db } from "./connection.js";
 
-export const initializeDatabase = () => {
-  createTables(db);
-  seedInitialData(db);
+export const initializeDatabase = async () => {
+  await createTables(db);
+  await seedInitialData(db);
 };
 
-const createTables = (db: Database) => {
-  db.exec(`
+const createTables = async (db: Database) => {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS admin_users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
@@ -19,6 +18,7 @@ const createTables = (db: Database) => {
       role TEXT DEFAULT 'admin',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -48,42 +48,43 @@ const createTables = (db: Database) => {
       is_active BOOLEAN DEFAULT 1,
       sort_order INTEGER DEFAULT 0
     );
-    
-    -- Tabla de Órdenes con la estructura correcta (snake_case)
+
     CREATE TABLE IF NOT EXISTS orders (
-        id TEXT PRIMARY KEY,
-        customer_id TEXT NOT NULL,
-        customer_name TEXT NOT NULL,
-        customer_email TEXT NOT NULL,
-        customer_phone TEXT,
-        customer_doc_number TEXT,
-        items TEXT NOT NULL,
-        total INTEGER NOT NULL,
-        status TEXT DEFAULT 'pending',
-        shipping_street_name TEXT,
-        shipping_street_number TEXT,
-        shipping_apartment TEXT,
-        shipping_description TEXT,
-        shipping_city TEXT,
-        shipping_postal_code TEXT,
-        shipping_province TEXT,
-        shipping_cost INTEGER,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      id TEXT PRIMARY KEY,
+      customer_id TEXT NOT NULL,
+      customer_name TEXT NOT NULL,
+      customer_email TEXT NOT NULL,
+      customer_phone TEXT,
+      customer_doc_number TEXT,
+      items TEXT NOT NULL,
+      total INTEGER NOT NULL,
+      status TEXT DEFAULT 'pending',
+      shipping_street_name TEXT,
+      shipping_street_number TEXT,
+      shipping_apartment TEXT,
+      shipping_description TEXT,
+      shipping_city TEXT,
+      shipping_postal_code TEXT,
+      shipping_province TEXT,
+      shipping_cost INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS customers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        phone TEXT,
-        order_count INTEGER DEFAULT 0,
-        total_spent INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      phone TEXT,
+      order_count INTEGER DEFAULT 0,
+      total_spent INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
     CREATE TABLE IF NOT EXISTS site_settings (
-        key TEXT PRIMARY KEY,
-        value TEXT
+      key TEXT PRIMARY KEY,
+      value TEXT
     );
+
     CREATE TABLE IF NOT EXISTS drop_notifications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT UNIQUE NOT NULL,
@@ -91,47 +92,47 @@ const createTables = (db: Database) => {
     );
   `);
 
-  try {
-    db.exec("ALTER TABLE orders ADD COLUMN customer_phone TEXT;");
-  } catch (error: any) {
-    if (!error.message.includes("duplicate column name")) throw error;
-  }
-  try {
-    db.exec("ALTER TABLE orders ADD COLUMN customer_doc_number TEXT;");
-  } catch (error: any) {
-    if (!error.message.includes("duplicate column name")) throw error;
+  // Manejar alteraciones condicionales
+  for (const column of ["customer_phone", "customer_doc_number"]) {
+    try {
+      await db.exec(`ALTER TABLE orders ADD COLUMN ${column} TEXT;`);
+    } catch (error: any) {
+      if (!error.message.includes("duplicate column name")) throw error;
+    }
   }
 };
 
-const seedInitialData = (db: Database) => {
-  const adminExists = db
-    .prepare("SELECT COUNT(*) as count FROM admin_users")
-    .get() as { count: number };
-  if (adminExists.count === 0) {
+const seedInitialData = async (db: Database) => {
+  const adminExists = await db.get<{ count: number }>(
+    "SELECT COUNT(*) as count FROM admin_users"
+  );
+  if (!adminExists || adminExists.count === 0) {
     const hashedPassword = bcrypt.hashSync("admin123", 10);
-    db.prepare(
+    await db.run(
       `
       INSERT INTO admin_users (username, password, email, role)
       VALUES (?, ?, ?, ?)
-    `
-    ).run(
-      "grigomati@gmail.com",
-      hashedPassword,
-      "admin@rosariodenim.com",
-      "super_admin"
+    `,
+      ["grigomati@gmail.com", hashedPassword, "admin@rosariodenim.com", "super_admin"]
     );
     console.log("✅ Default admin user created.");
   }
-  const settingsExist = db
-    .prepare("SELECT COUNT(*) as count FROM site_settings")
-    .get() as { count: number };
-  if (settingsExist.count === 0) {
-    const stmt = db.prepare(
-      "INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)"
-    );
-    stmt.run("site_name", "Rosario Denim");
-    stmt.run("contact_email", "hola@rosariodenim.com");
-    stmt.run("contact_phone", "+54 9 341 123-4567");
+
+  const settingsExist = await db.get<{ count: number }>(
+    "SELECT COUNT(*) as count FROM site_settings"
+  );
+  if (!settingsExist || settingsExist.count === 0) {
+    const settings = [
+      ["site_name", "Rosario Denim"],
+      ["contact_email", "hola@rosariodenim.com"],
+      ["contact_phone", "+54 9 341 123-4567"],
+    ];
+    for (const [key, value] of settings) {
+      await db.run("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)", [
+        key,
+        value,
+      ]);
+    }
     console.log("✅ Default site settings created.");
   }
 };

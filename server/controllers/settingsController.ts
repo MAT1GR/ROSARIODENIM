@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { db } from '../../src/lib/database';
+import { db } from '../../src/lib/database.js';
 
-export const getAllSettings = (req: Request, res: Response) => {
+export const getAllSettings = async (req: Request, res: Response) => {
     try {
-        const settings = db.settings.getAll();
+        const settings = await db.settings.getAll();
         res.json(settings);
     } catch (error) {
         console.error("Error fetching settings:", error);
@@ -11,10 +11,10 @@ export const getAllSettings = (req: Request, res: Response) => {
     }
 };
 
-export const updateSettings = (req: Request, res: Response) => {
+export const updateSettings = async (req: Request, res: Response) => {
     try {
         const settingsToUpdate = req.body; // { key: value, key2: value2 }
-        db.settings.update(settingsToUpdate);
+        await db.settings.update(settingsToUpdate);
         res.json({ message: 'Configuración guardada con éxito' });
     } catch (error) {
         console.error("Error updating settings:", error);

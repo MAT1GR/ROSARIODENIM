@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { db } from '../../src/lib/database';
+import { db } from '../../src/lib/database.js';
 
-export const getAllProducts = (req: Request, res: Response) => {
+export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const filters = {
       category: req.query.category as string | undefined,
@@ -9,7 +9,7 @@ export const getAllProducts = (req: Request, res: Response) => {
       page: Number(req.query.page) || 1,
       limit: Number(req.query.limit) || 9,
     };
-    const result = db.products.getAll(filters);
+    const result = await db.products.getAll(filters);
     res.json(result);
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -17,9 +17,9 @@ export const getAllProducts = (req: Request, res: Response) => {
   }
 };
 
-export const getAllAdminProducts = (req: Request, res: Response) => {
+export const getAllAdminProducts = async (req: Request, res: Response) => {
     try {
-        const products = db.products.getAllAdmin();
+        const products = await db.products.getAllAdmin();
         res.json(products);
     } catch (error) {
         console.error("Error fetching admin products:", error);
@@ -27,10 +27,10 @@ export const getAllAdminProducts = (req: Request, res: Response) => {
     }
 };
 
-export const getNewProducts = (req: Request, res: Response) => {
+export const getNewProducts = async (req: Request, res: Response) => {
     try {
         const limit = Number(req.query.limit) || 4;
-        const products = db.products.getNewest(limit);
+        const products = await db.products.getNewest(limit);
         res.json(products);
     } catch (error) {
         console.error("Error fetching new products:", error);
@@ -38,9 +38,9 @@ export const getNewProducts = (req: Request, res: Response) => {
     }
 };
 
-export const getBestsellerProducts = (req: Request, res: Response) => {
+export const getBestsellerProducts = async (req: Request, res: Response) => {
     try {
-        const products = db.products.getBestsellers();
+        const products = await db.products.getBestsellers();
         res.json(products);
     } catch (error) {
         console.error("Error fetching bestseller products:", error);
@@ -48,9 +48,9 @@ export const getBestsellerProducts = (req: Request, res: Response) => {
     }
 };
 
-export const getProductById = (req: Request, res: Response) => {
+export const getProductById = async (req: Request, res: Response) => {
   try {
-    const product = db.products.getById(req.params.id);
+    const product = await db.products.getById(req.params.id);
     if (product) {
       res.json(product);
     } else {
@@ -62,7 +62,7 @@ export const getProductById = (req: Request, res: Response) => {
   }
 };
 
-export const createProduct = (req: Request, res: Response) => {
+export const createProduct = async (req: Request, res: Response) => {
     try {
         const newProductData = req.body;
         const files = req.files as Express.Multer.File[];
@@ -80,8 +80,8 @@ export const createProduct = (req: Request, res: Response) => {
         newProductData.isBestSeller = newProductData.isBestSeller === 'true';
         // --- FIN DE LA CORRECCIÓN ---
         
-        const createdProductId = db.products.create(newProductData);
-        const createdProduct = db.products.getById(createdProductId);
+        const createdProductId = await db.products.create(newProductData);
+        const createdProduct = await db.products.getById(createdProductId);
         res.status(201).json(createdProduct);
     } catch (error) {
         console.error("Error creating product:", error);
@@ -89,7 +89,7 @@ export const createProduct = (req: Request, res: Response) => {
     }
 };
 
-export const updateProduct = (req: Request, res: Response) => {
+export const updateProduct = async (req: Request, res: Response) => {
     try {
         const { existingImages, ...productData } = req.body;
         const files = req.files as Express.Multer.File[];
@@ -113,9 +113,9 @@ export const updateProduct = (req: Request, res: Response) => {
         productData.isBestSeller = productData.isBestSeller === 'true';
         // --- FIN DE LA CORRECCIÓN ---
 
-        const updated = db.products.update(req.params.id, productData);
+        const updated = await db.products.update(req.params.id, productData);
         if (updated) {
-            const updatedProduct = db.products.getById(req.params.id);
+            const updatedProduct = await db.products.getById(req.params.id);
             res.json(updatedProduct);
         } else {
             res.status(404).json({ message: 'Producto no encontrado para actualizar' });
@@ -126,9 +126,9 @@ export const updateProduct = (req: Request, res: Response) => {
     }
 };
 
-export const deleteProduct = (req: Request, res: Response) => {
+export const deleteProduct = async (req: Request, res: Response) => {
     try {
-        const deleted = db.products.delete(req.params.id);
+        const deleted = await db.products.delete(req.params.id);
         if (deleted) {
             res.status(204).send();
         } else {

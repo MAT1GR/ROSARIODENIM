@@ -1,7 +1,6 @@
-// mat1gr/rosariodenim/ROSARIODENIM-0a9e948297937bd8aefc1890579b3a59f99d6fdc/src/lib/db/services.ts
-
+// src/lib/db/services.ts
 import bcrypt from "bcryptjs";
-import { db } from "./connection";
+import { db } from "./connection.js";
 import {
   Product,
   AdminUser,
@@ -11,7 +10,7 @@ import {
   SiteSettings,
   CartItem,
   CustomerOrder,
-} from "../../types";
+} from "../../types/index.js";
 
 // --- Helpers ---
 const parseProduct = (row: any): Product => ({
@@ -79,14 +78,14 @@ const parseCustomer = (row: any): Customer => ({
   createdAt: new Date(row.created_at),
 });
 
+// --- Services ---
+
 export const authService = {
-  authenticateAdmin: async (
-    username: string,
-    password: string
-  ): Promise<AdminUser | null> => {
-    const user = db
-      .prepare("SELECT * FROM admin_users WHERE username = ?")
-      .get(username) as AdminUser | undefined;
+  async authenticateAdmin(username: string, password: string): Promise<AdminUser | null> {
+    const stmt = await db.prepare("SELECT * FROM admin_users WHERE username = ?");
+    const user = (await stmt.get(username)) as AdminUser | undefined;
+    await stmt.finalize();
+
     if (user && (await bcrypt.compare(password, user.password))) {
       const { password, ...userWithoutPassword } = user;
       return userWithoutPassword as AdminUser;
@@ -94,57 +93,44 @@ export const authService = {
     return null;
   },
 
-  changeAdminPassword: async (
-    username: string,
-    oldPassword: string,
-    newPassword: string
-  ): Promise<boolean> => {
-    const user = db
-      .prepare("SELECT * FROM admin_users WHERE username = ?")
-      .get(username) as AdminUser | undefined;
+  async changeAdminPassword(username: string, oldPassword: string, newPassword: string): Promise<boolean> {
+    const stmt = await db.prepare("SELECT * FROM admin_users WHERE username = ?");
+    const user = (await stmt.get(username)) as AdminUser | undefined;
+    await stmt.finalize();
 
     if (user && (await bcrypt.compare(oldPassword, user.password))) {
       const hashedNewPassword = bcrypt.hashSync(newPassword, 10);
-      db
-        .prepare("UPDATE admin_users SET password = ? WHERE username = ?")
-        .run(hashedNewPassword, username);
+      const updateStmt = await db.prepare("UPDATE admin_users SET password = ? WHERE username = ?");
+      await updateStmt.run(hashedNewPassword, username);
+      await updateStmt.finalize();
       return true;
     }
-
     return false;
   },
 };
 
 export const productService = {
-  getAll: (filters: {
-    category?: string;
-    sortBy?: string;
-    page?: number;
-    limit?: number;
-  }) => {
+  async getAll(filters: { category?: string; sortBy?: string; page?: number; limit?: number }) {
     const { category, sortBy, page = 1, limit = 9 } = filters;
-    let whereClauses: string[] = ["is_active = 1"];
-    let params: (string | number)[] = [];
+    const whereClauses: string[] = ["is_active = 1"];
+    const params: (string | number)[] = [];
     if (category) {
       whereClauses.push("category = ?");
       params.push(category);
     }
-    const where =
-      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    const where = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
     let orderBy = "ORDER BY id DESC";
     if (sortBy === "price-asc") orderBy = "ORDER BY price ASC";
     if (sortBy === "price-desc") orderBy = "ORDER BY price DESC";
     if (sortBy === "popular") orderBy = "ORDER BY is_best_seller DESC, id DESC";
+
     const offset = (page - 1) * limit;
     const productsQuery = `SELECT * FROM products ${where} ${orderBy} LIMIT ? OFFSET ?`;
     const countQuery = `SELECT COUNT(*) as total FROM products ${where}`;
-    const products = db
-      .prepare(productsQuery)
-      .all(...params, limit, offset)
-      .map(parseProduct);
-    const totalResult = db.prepare(countQuery).get(...params) as {
-      total: number;
-    };
+
+    const products = (await db.all(productsQuery, ...params, limit, offset)).map(parseProduct);
+    const totalResult = (await db.get(countQuery, ...params)) as { total: number };
     return {
       products,
       totalPages: Math.ceil(totalResult.total / limit),
@@ -153,338 +139,260 @@ export const productService = {
     };
   },
 
-  getAllAdmin: (): Product[] => {
-    const rows = db
-      .prepare("SELECT * FROM products WHERE is_active = 1 ORDER BY id DESC")
-      .all();
-    return rows.map(parseProduct);
-  },
-
-  getNewest: (limit: number = 3): Product[] => {
-    const rows = db
-      .prepare(
-        `SELECT * FROM products WHERE is_active = 1 AND is_new = 1 ORDER BY id DESC LIMIT ?`
-      )
-      .all(limit);
-    return rows.map(parseProduct);
-  },
-
-  getBestsellers: (limit: number = 3): Product[] => {
-    const rows = db
-      .prepare(
-        `SELECT * FROM products WHERE is_active = 1 AND is_best_seller = 1 ORDER BY id DESC LIMIT ?`
-      )
-      .all(limit);
-    return rows.map(parseProduct);
-  },
-
-  getById: (id: string | number): Product | null => {
-    const row = db
-      .prepare("SELECT * FROM products WHERE id = ? AND is_active = 1")
-      .get(id);
+  async getById(id: string | number): Promise<Product | null> {
+    const row = await db.get("SELECT * FROM products WHERE id = ? AND is_active = 1", id);
     return row ? parseProduct(row) : null;
   },
-  create: (product: Omit<Product, "id">): number => {
-    const result = db
-      .prepare(
-        `
-      INSERT INTO products (name, price, images, video, category, description, material, rise, fit, sizes, is_new, is_best_seller)
-      VALUES (@name, @price, @images, @video, @category, @description, @material, @rise, @fit, @sizes, @isNew, @isBestSeller)
-    `
-      )
-      .run({
-        ...product,
-        images: JSON.stringify(product.images),
-        video: product.video || null,
-        sizes: JSON.stringify(product.sizes),
-        isNew: product.isNew ? 1 : 0,
-        isBestSeller: product.isBestSeller ? 1 : 0,
-      });
-    return result.lastInsertRowid as number;
-  },
-  update: (id: string, data: Partial<Omit<Product, "id">>): boolean => {
-    const stmt = db.prepare(`
-      UPDATE products SET
-        name = @name, price = @price, images = @images, video = @video, category = @category,
-        description = @description, material = @material, rise = @rise, fit = @fit,
-        sizes = @sizes, is_new = @isNew, is_best_seller = @isBestSeller,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = @id
-    `);
-    const result = stmt.run({
-      id,
-      ...data,
-      images: JSON.stringify(data.images),
-      video: data.video || null,
-      sizes: JSON.stringify(data.sizes),
-      isNew: data.isNew ? 1 : 0,
-      isBestSeller: data.isBestSeller ? 1 : 0,
-    });
-    return result.changes > 0;
-  },
-  delete: (id: string): boolean => {
-    const result = db
-      .prepare("UPDATE products SET is_active = 0 WHERE id = ?")
-      .run(id);
-    return result.changes > 0;
-  },
 
-  updateProductStock: (items: CartItem[]): void => {
-    const updateStmt = db.prepare(
-      "UPDATE products SET sizes = ? WHERE id = ?"
-    );
-    const getProductStmt = db.prepare(
-      "SELECT sizes FROM products WHERE id = ?"
-    );
-
-    const transaction = db.transaction((cartItems: CartItem[]) => {
-      for (const item of cartItems) {
-        const product = getProductStmt.get(item.product.id) as
-          | { sizes: string }
-          | undefined;
-        if (product) {
-          const sizes = JSON.parse(product.sizes);
-          if (sizes[item.size]) {
-            sizes[item.size].stock -= item.quantity;
-            updateStmt.run(JSON.stringify(sizes), item.product.id);
-          }
+  async updateProductStock(items: CartItem[]): Promise<void> {
+    for (const item of items) {
+      const product = await this.getById(item.product.id);
+      if (product) {
+        const sizes = product.sizes as any;
+        if (sizes[item.size]) {
+          sizes[item.size].stock -= item.quantity;
         }
+        await db.run('UPDATE products SET sizes = ? WHERE id = ?', JSON.stringify(sizes), product.id);
       }
-    });
-    transaction(items);
+    }
+  },
+
+  async getAllAdmin(): Promise<Product[]> {
+    const rows = await db.all('SELECT * FROM products ORDER BY id DESC');
+    return rows.map(parseProduct);
+  },
+
+  async getNewest(limit: number): Promise<Product[]> {
+    const rows = await db.all('SELECT * FROM products WHERE is_new = 1 AND is_active = 1 ORDER BY created_at DESC LIMIT ?', limit);
+    return rows.map(parseProduct);
+  },
+
+  async getBestsellers(): Promise<Product[]> {
+    const rows = await db.all('SELECT * FROM products WHERE is_best_seller = 1 AND is_active = 1 ORDER BY created_at DESC');
+    return rows.map(parseProduct);
+  },
+
+  async create(product: Omit<Product, 'id'>): Promise<number> {
+    const result = await db.run(
+      'INSERT INTO products (name, price, images, video, category, description, material, rise, fit, sizes, is_new, is_best_seller) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      product.name,
+      product.price,
+      JSON.stringify(product.images),
+      product.video,
+      product.category,
+      product.description,
+      product.material,
+      product.rise,
+      product.fit,
+      JSON.stringify(product.sizes),
+      product.isNew,
+      product.isBestSeller
+    );
+    return result.lastID!;
+  },
+
+  async update(productId: string, product: Partial<Product>): Promise<boolean> {
+    const result = await db.run(
+      'UPDATE products SET name = ?, price = ?, images = ?, video = ?, category = ?, description = ?, material = ?, rise = ?, fit = ?, sizes = ?, is_new = ?, is_best_seller = ? WHERE id = ?',
+      product.name,
+      product.price,
+      JSON.stringify(product.images),
+      product.video,
+      product.category,
+      product.description,
+      product.material,
+      product.rise,
+      product.fit,
+      JSON.stringify(product.sizes),
+      product.isNew,
+      product.isBestSeller,
+      productId
+    );
+    return (result.changes ?? 0) > 0;
+  },
+
+  async delete(productId: string): Promise<boolean> {
+    const result = await db.run('DELETE FROM products WHERE id = ?', productId);
+    return (result.changes ?? 0) > 0;
   },
 };
 
 export const categoryService = {
-  getAll: (): Category[] => {
-    const rows = db
-      .prepare(
-        "SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC"
-      )
-      .all();
+  async getAll(): Promise<Category[]> {
+    const rows = await db.all("SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC");
     return rows.map(parseCategory);
   },
-  getById: (id: number): Category | null => {
-    const row = db
-      .prepare("SELECT * FROM categories WHERE id = ?")
-      .get(id);
+
+  async create(category: Omit<Category, 'id'>): Promise<number> {
+    const result = await db.run(
+      'INSERT INTO categories (name, slug, description, image, is_active, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
+      category.name,
+      category.slug,
+      category.description,
+      category.image,
+      category.is_active,
+      category.sort_order
+    );
+    return result.lastID!;
+  },
+
+  async getById(categoryId: number): Promise<Category | null> {
+    const row = await db.get('SELECT * FROM categories WHERE id = ?', categoryId);
     return row ? parseCategory(row) : null;
   },
-  create: (category: Omit<Category, "id" | "is_active">): number => {
-    const result = db
-      .prepare(
-        "INSERT INTO categories (name, slug, description, image, sort_order) VALUES (@name, @slug, @description, @image, @sort_order)"
-      )
-      .run({
-        name: category.name,
-        slug: category.slug || category.name.toLowerCase().replace(/\s+/g, "-"),
-        description: category.description || "",
-        image: category.image || "",
-        sort_order: category.sort_order || 0,
-      });
-    return result.lastInsertRowid as number;
+
+  async update(categoryId: number, category: Partial<Category>): Promise<boolean> {
+    const result = await db.run(
+      'UPDATE categories SET name = ?, slug = ?, description = ?, image = ?, is_active = ?, sort_order = ? WHERE id = ?',
+      category.name,
+      category.slug,
+      category.description,
+      category.image,
+      category.is_active,
+      category.sort_order,
+      categoryId
+    );
+    return (result.changes ?? 0) > 0;
   },
-  update: (id: number, data: Partial<Omit<Category, "id">>): boolean => {
-    const result = db
-      .prepare(
-        "UPDATE categories SET name = @name, slug = @slug, description = @description, image = @image, sort_order = @sort_order WHERE id = @id"
-      )
-      .run({
-        id,
-        name: data.name,
-        slug: data.slug || data.name?.toLowerCase().replace(/\s+/g, "-"),
-        description: data.description,
-        image: data.image,
-        sort_order: data.sort_order,
-      });
-    return result.changes > 0;
-  },
-  delete: (id: number): boolean => {
-    const result = db
-      .prepare("UPDATE categories SET is_active = 0 WHERE id = ?")
-      .run(id);
-    return result.changes > 0;
+
+  async delete(categoryId: number): Promise<boolean> {
+    const result = await db.run('DELETE FROM categories WHERE id = ?', categoryId);
+    return (result.changes ?? 0) > 0;
   },
 };
 
 export const orderService = {
-  create: (
-    order: Omit<Order, "id" | "customerId"> & { customerId: string }
-  ): number => {
-    const result = db
-      .prepare(
-        `
-            INSERT INTO orders (customer_id, customer_name, customer_email, customer_phone, customer_doc_number, items, total, status, created_at, 
-                                shipping_street_name, shipping_street_number, shipping_apartment, shipping_description, shipping_city, shipping_postal_code, shipping_province, shipping_cost, shipping_name)
-            VALUES (@customerId, @customerName, @customerEmail, @customerPhone, @customerDocNumber, @items, @total, @status, @createdAt,
-                    @shippingStreetName, @shippingStreetNumber, @shippingApartment, @shippingDescription, @shippingCity, @shippingPostalCode, @shippingProvince, @shippingCost, @shippingName)
-        `
-      )
-      .run({
-        customerId: order.customerId,
-        customerName: order.customerName,
-        customerEmail: order.customerEmail,
-        customerPhone: order.customerPhone,
-        customerDocNumber: order.customerDocNumber,
-        items: JSON.stringify(order.items),
-        total: order.total,
-        status: order.status,
-        createdAt: order.createdAt.toISOString(),
-        shippingStreetName: order.shippingStreetName,
-        shippingStreetNumber: order.shippingStreetNumber,
-        shippingApartment: order.shippingApartment,
-        shippingDescription: order.shippingDescription,
-        shippingCity: order.shippingCity,
-        shippingPostalCode: order.shippingPostalCode,
-        shippingProvince: order.shippingProvince,
-        shippingCost: order.shippingCost,
-        shippingName: order.shippingName,
-      });
-    return result.lastInsertRowid as number;
+  async create(order: Omit<Order, "id" | "customerId"> & { customerId: string }): Promise<number> {
+    const result = await db.run(
+      `INSERT INTO orders (customer_id, customer_name, customer_email, customer_phone, customer_doc_number, items, total, status, created_at, 
+        shipping_street_name, shipping_street_number, shipping_apartment, shipping_description, shipping_city, shipping_postal_code, shipping_province, shipping_cost, shipping_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      order.customerId,
+      order.customerName,
+      order.customerEmail,
+      order.customerPhone,
+      order.customerDocNumber,
+      JSON.stringify(order.items),
+      order.total,
+      order.status,
+      order.createdAt.toISOString(),
+      order.shippingStreetName,
+      order.shippingStreetNumber,
+      order.shippingApartment,
+      order.shippingDescription,
+      order.shippingCity,
+      order.shippingPostalCode,
+      order.shippingProvince,
+      order.shippingCost,
+      order.shippingName
+    );
+    return result.lastID!;
   },
-  getAll: (): Order[] => {
-    const rows = db
-      .prepare("SELECT * FROM orders ORDER BY created_at DESC")
-      .all();
+
+  async getAll(): Promise<Order[]> {
+    const rows = await db.all("SELECT * FROM orders ORDER BY created_at DESC");
     return rows.map(parseOrder);
   },
-  updateStatus: (id: string, status: string): boolean => {
-    const result = db
-      .prepare("UPDATE orders SET status = ? WHERE id = ?")
-      .run(status, id);
-    return result.changes > 0;
+
+  async updateStatus(orderId: string, status: string): Promise<boolean> {
+    const result = await db.run('UPDATE orders SET status = ? WHERE id = ?', status, orderId);
+    return (result.changes ?? 0) > 0;
   },
-  getByCustomerId: (customerId: string): CustomerOrder[] => {
-    const rows = db
-      .prepare(
-        "SELECT id, items, total, status, created_at FROM orders WHERE customer_id = ? ORDER BY created_at DESC"
-      )
-      .all(customerId);
-    return rows.map(parseCustomerOrder);
+
+  async getByCustomerId(customerId: string): Promise<Order[]> {
+    const rows = await db.all('SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC', customerId);
+    return rows.map(parseOrder);
   },
-  getById: (id: string): Order | null => {
-    const row = db
-      .prepare("SELECT * FROM orders WHERE id = ?")
-      .get(id);
+
+  async getById(orderId: string): Promise<Order | null> {
+    const row = await db.get('SELECT * FROM orders WHERE id = ?', orderId);
     return row ? parseOrder(row) : null;
   },
 };
 
 export const customerService = {
-  findOrCreate: (customer: {
-    email: string;
-    name: string;
-    phone?: string;
-    totalSpent: number;
-  }): number => {
-    let existingCustomer = db
-      .prepare("SELECT id, total_spent FROM customers WHERE email = ?")
-      .get(customer.email) as { id: number; total_spent: number } | undefined;
-
-    if (existingCustomer) {
-      db
-        .prepare(
-          "UPDATE customers SET name = ?, phone = ?, order_count = order_count + 1, total_spent = ? WHERE id = ?"
-        )
-        .run(
-          customer.name,
-          customer.phone || null,
-          existingCustomer.total_spent + customer.totalSpent,
-          existingCustomer.id
-        );
-      return existingCustomer.id;
-    } else {
-      const result = db
-        .prepare(
-          "INSERT INTO customers (name, email, phone, order_count, total_spent) VALUES (?, ?, ?, 1, ?)"
-        )
-        .run(
-          customer.name,
-          customer.email,
-          customer.phone || null,
-          customer.totalSpent
-        );
-      return result.lastInsertRowid as number;
-    }
-  },
-  getAll: (): Customer[] => {
-    const rows = db
-      .prepare("SELECT * FROM customers ORDER BY created_at DESC")
-      .all();
+  async getAll(): Promise<Customer[]> {
+    const rows = await db.all("SELECT * FROM customers ORDER BY created_at DESC");
     return rows.map(parseCustomer);
   },
-  getById: (id: string): Customer | null => {
-    const row = db
-      .prepare("SELECT * FROM customers WHERE id = ?")
-      .get(id);
+
+  async findOrCreate(customerData: { email: string; name: string; phone: string; totalSpent: number }): Promise<number> {
+    const existingCustomer = await db.get('SELECT * FROM customers WHERE email = ?', customerData.email);
+    if (existingCustomer) {
+      await db.run(
+        'UPDATE customers SET order_count = order_count + 1, total_spent = total_spent + ? WHERE id = ?',
+        customerData.totalSpent,
+        existingCustomer.id
+      );
+      return existingCustomer.id;
+    } else {
+      const result = await db.run(
+        'INSERT INTO customers (name, email, phone, order_count, total_spent) VALUES (?, ?, ?, 1, ?)',
+        customerData.name,
+        customerData.email,
+        customerData.phone,
+        customerData.totalSpent
+      );
+      return result.lastID!;
+    }
+  },
+
+  async getById(customerId: string): Promise<Customer | null> {
+    const row = await db.get('SELECT * FROM customers WHERE id = ?', customerId);
     return row ? parseCustomer(row) : null;
   },
 };
 
+export const dashboardService = {
+  async getStats(): Promise<{ totalRevenue: number; totalOrders: number; totalCustomers: number }> {
+    const revenue = await db.get("SELECT SUM(total) as total FROM orders WHERE status = 'paid'");
+    const orders = await db.get("SELECT COUNT(*) as total FROM orders");
+    const customers = await db.get("SELECT COUNT(*) as total FROM customers");
+    return {
+      totalRevenue: revenue?.total || 0,
+      totalOrders: orders?.total || 0,
+      totalCustomers: customers?.total || 0,
+    };
+  },
+
+  async getRecentOrders(): Promise<Order[]> {
+    const rows = await db.all('SELECT * FROM orders ORDER BY created_at DESC LIMIT 5');
+    return rows.map(parseOrder);
+  },
+
+  async getRecentCustomers(): Promise<Customer[]> {
+    const rows = await db.all('SELECT * FROM customers ORDER BY created_at DESC LIMIT 5');
+    return rows.map(parseCustomer);
+  },
+};
+
 export const settingsService = {
-  getAll: (): SiteSettings => {
-    const rows = db
-      .prepare("SELECT key, value FROM site_settings")
-      .all() as { key: string; value: string }[];
+  async getAll(): Promise<SiteSettings> {
+    const rows = (await db.all("SELECT key, value FROM site_settings")) as { key: string; value: string }[];
     return rows.reduce((acc, { key, value }) => {
       acc[key] = { value, type: "text" };
       return acc;
     }, {} as SiteSettings);
   },
-  update: (settings: Record<string, string>): void => {
-    const stmt = db.prepare(
-      "INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)"
-    );
-   const transaction = db.transaction((settingsObject: any) => {
-      for (const [key, value] of Object.entries(settingsObject)) {
-        stmt.run(key, value);
-      }
-    });
-    transaction(settings);
+
+  async update(settings: { [key: string]: string }): Promise<void> {
+    for (const key in settings) {
+      await db.run('INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)', key, settings[key]);
+    }
   },
 };
 
-export const dashboardService = {
-  getStats: () => {
-    const productCount = (
-      db
-        .prepare("SELECT COUNT(*) as count FROM products WHERE is_active = 1")
-        .get() as { count: number }
-    ).count;
-    const orderCount = (
-      db.prepare("SELECT COUNT(*) as count FROM orders").get() as {
-        count: number;
-      }
-    ).count;
-    const customerCount = (
-      db.prepare("SELECT COUNT(*) as count FROM customers").get() as {
-        count: number;
-      }
-    ).count;
-    const totalRevenueResult = db
-      .prepare(
-        "SELECT SUM(total) as total FROM orders WHERE status = 'delivered'"
-      )
-      .get() as { total: number | null };
-    const totalRevenue = totalRevenueResult.total || 0;
+export const notificationService = {
+  async subscribe(email: string): Promise<boolean> {
+    const existing = await db.get('SELECT id FROM drop_notifications WHERE email = ?', email);
+    if (existing) {
+      return false;
+    }
+    await db.run('INSERT INTO drop_notifications (email) VALUES (?)', email);
+    return true;
+  },
 
-    return {
-      productCount,
-      orderCount,
-      customerCount,
-      totalRevenue,
-    };
-  },
-  getRecentOrders: (limit: number = 5): Order[] => {
-    const rows = db
-      .prepare("SELECT * FROM orders ORDER BY created_at DESC LIMIT ?")
-      .all(limit);
-    return rows.map(parseOrder);
-  },
-  getRecentCustomers: (limit: number = 5): Customer[] => {
-    const rows = db
-      .prepare("SELECT * FROM customers ORDER BY created_at DESC LIMIT ?")
-      .all(limit);
-    return rows.map(parseCustomer);
+  async getAll(): Promise<{ email: string }[]> {
+    return db.all('SELECT email FROM drop_notifications ORDER BY created_at DESC');
   },
 };

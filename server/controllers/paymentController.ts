@@ -1,9 +1,9 @@
 // mat1gr/rosariodenim/ROSARIODENIM-cefd39a742f52a93c451ebafdb5a8b992e99e78c/server/controllers/paymentController.ts
 import { Request, Response, Router } from "express";
 import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
-import { db } from "../../src/lib/database";
+import { db } from "../../src/lib/database.js";
 import "dotenv/config";
-import { CartItem } from "../../src/types";
+import { CartItem } from "../../src/types/index.js";
 
 const router = Router();
 
@@ -105,7 +105,7 @@ const processPayment = async (req: Request, res: Response) => {
       const validatedItems = [];
 
       for (const clientItem of clientOrder.items) {
-        const product = db.products.getById(clientItem.product.id);
+        const product = await db.products.getById(clientItem.product.id);
         if (!product) {
           console.error(`Product not found for ID: ${clientItem.product.id}`);
           return res.status(404).json({ message: `Producto no encontrado: ${clientItem.product.name}` });
@@ -146,10 +146,10 @@ const processPayment = async (req: Request, res: Response) => {
         totalSpent: result.transaction_amount!,
       };
 
-      const customerId = db.customers.findOrCreate(customerData);
-      db.products.updateProductStock(clientOrder.items); // Use clientOrder.items for stock update
+      const customerId = await db.customers.findOrCreate(customerData);
+      await db.products.updateProductStock(clientOrder.items); // Use clientOrder.items for stock update
 
-      const newOrderId = db.orders.create({
+      const newOrderId = await db.orders.create({
         customerId: customerId.toString(),
         customerName: customerData.name,
         customerEmail: customerData.email,
@@ -222,7 +222,7 @@ const createTransferOrder = async (req: Request, res: Response) => {
 
     for (const clientItem of clientItems) {
       console.log(`Validating product ID: ${clientItem.product.id}, Size: ${clientItem.size}, Quantity: ${clientItem.quantity}`);
-      const product = db.products.getById(clientItem.product.id);
+      const product = await db.products.getById(clientItem.product.id);
       if (!product) {
         console.error(`Product not found in DB for ID: ${clientItem.product.id}`);
         return res.status(404).json({ message: `Producto no encontrado: ${clientItem.product.name}` });
@@ -296,7 +296,7 @@ const createTransferOrder = async (req: Request, res: Response) => {
     };
     console.log("New Order Data prepared:", newOrderData);
 
-    const newOrderId = db.orders.create(newOrderData);
+    const newOrderId = await db.orders.create(newOrderData);
     console.log("Order created in DB with ID:", newOrderId);
 
     const createdOrder = await db.orders.getById(newOrderId.toString());

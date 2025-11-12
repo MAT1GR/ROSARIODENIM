@@ -10,7 +10,7 @@ import {
   getNewProducts,
   getBestsellerProducts,
   getAllAdminProducts
-} from '../controllers/productController';
+} from '../controllers/productController.js';
 
 const router = Router();
 

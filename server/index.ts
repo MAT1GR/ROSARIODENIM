@@ -1,20 +1,20 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import path from 'path'; // <-- Importante
+import path from 'path';
 
 // --- Tus importaciones de rutas ---
-import authRoutes from './routes/auth';
-import productRoutes from './routes/products';
-import categoryRoutes from './routes/categories';
-import orderRoutes from './routes/orders';
-import customerRoutes from './routes/customers';
-import settingsRoutes from './routes/settings';
-import dashboardRoutes from './routes/dashboard';
-import shippingRoutes from './routes/shipping';
-import testimonialsRoutes from './routes/testimonials';
-import notificationRoutes from './routes/notifications';
-import paymentRoutes from './controllers/paymentController';
+import authRoutes from './routes/auth.js';
+import productRoutes from './routes/products.js';
+import categoryRoutes from './routes/categories.js';
+import orderRoutes from './routes/orders.js';
+import customerRoutes from './routes/customers.js';
+import settingsRoutes from './routes/settings.js';
+import dashboardRoutes from './routes/dashboard.js';
+import shippingRoutes from './routes/shipping.js';
+import testimonialsRoutes from './routes/testimonials.js';
+import notificationRoutes from './routes/notifications.js';
+import paymentRoutes from './controllers/paymentController.js';
 
 const app = express();
 
@@ -23,7 +23,9 @@ app.use(cors({ origin: 'https://denimrosario.com.ar' }));
 app.use(express.json());
 
 // --- SERVIR ARCHIVOS ESTÁTICOS (CORREGIDO) ---
-
+// --- SERVIR ARCHIVOS ESTÁTICOS (CORREGIDO) ---
+// Use process.cwd() as the base directory (compatible with CommonJS/tsconfig "module" settings)
+const __dirname = process.cwd();
 // 1. Servir el Frontend (React)
 // __dirname será '.../dist/server'
 // Subimos un nivel ('..') para llegar a '.../dist'
@@ -53,7 +55,7 @@ app.use('/api/payments', paymentRoutes);
 
 // --- "Catch-All" para React (CORREGIDO) ---
 // Esto debe apuntar al index.html que está en '.../dist'
-app.get('*', (req, res) => {
+app.get(/(.*)/, (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 

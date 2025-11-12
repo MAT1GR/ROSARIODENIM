@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { db } from '../../src/lib/database';
-import { Category } from '../../src/types';
+import { db } from '../../src/lib/database.js';
+import { Category } from '../../src/types/index.js';
 
-export const getAllCategories = (req: Request, res: Response) => {
+export const getAllCategories = async (req: Request, res: Response) => {
   try {
-    const categories = db.categories.getAll();
+    const categories = await db.categories.getAll();
     res.json(categories);
   } catch (error) {
     console.error("Error fetching categories:", error);
@@ -12,11 +12,11 @@ export const getAllCategories = (req: Request, res: Response) => {
   }
 };
 
-export const createCategory = (req: Request, res: Response) => {
+export const createCategory = async (req: Request, res: Response) => {
   try {
     const newCategoryData = req.body as Omit<Category, 'id'>;
-    const createdCategoryId = db.categories.create(newCategoryData);
-    const createdCategory = db.categories.getById(createdCategoryId);
+    const createdCategoryId = await db.categories.create(newCategoryData);
+    const createdCategory = await db.categories.getById(createdCategoryId);
     res.status(201).json(createdCategory);
   } catch (error) {
     console.error("Error creating category:", error);
@@ -24,11 +24,11 @@ export const createCategory = (req: Request, res: Response) => {
   }
 };
 
-export const updateCategory = (req: Request, res: Response) => {
+export const updateCategory = async (req: Request, res: Response) => {
   try {
-    const updated = db.categories.update(Number(req.params.id), req.body);
+    const updated = await db.categories.update(Number(req.params.id), req.body);
     if (updated) {
-      const updatedCategory = db.categories.getById(Number(req.params.id));
+      const updatedCategory = await db.categories.getById(Number(req.params.id));
       res.json(updatedCategory);
     } else {
       res.status(404).json({ message: 'Categoría no encontrada para actualizar' });
@@ -39,9 +39,9 @@ export const updateCategory = (req: Request, res: Response) => {
   }
 };
 
-export const deleteCategory = (req: Request, res: Response) => {
+export const deleteCategory = async (req: Request, res: Response) => {
   try {
-    const deleted = db.categories.delete(Number(req.params.id));
+    const deleted = await db.categories.delete(Number(req.params.id));
     if (deleted) {
       res.status(204).send();
     } else {

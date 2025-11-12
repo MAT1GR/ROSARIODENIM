@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, changePassword } from '../controllers/authController'; // Se importa changePassword
+import { login, changePassword } from '../controllers/authController.js'; // Se importa changePassword
 
 const router = Router();
 

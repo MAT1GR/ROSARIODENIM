@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { AdminUser } from '../types';
+import { AdminUser } from '../types/index.js';
 
 interface AuthContextType {
   user: AdminUser | null;

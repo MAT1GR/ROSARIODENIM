@@ -1,4 +1,4 @@
-import { initializeDatabase } from './db/init';
+import { initializeDatabase } from './db/init.js';
 import { 
     authService, 
     productService, 
@@ -6,8 +6,9 @@ import {
     orderService,
     customerService,
     settingsService,
-    dashboardService
-} from './db/services';
+    dashboardService,
+    notificationService
+} from './db/services.js';
 
 initializeDatabase();
 
@@ -19,5 +20,6 @@ export const db = {
   customers: customerService,
   settings: settingsService,
   dashboard: dashboardService,
+  notifications: notificationService,
 };
 
