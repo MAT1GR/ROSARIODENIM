@@ -2,21 +2,25 @@
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
-    extend: {
-      colors: {
-        "blanco-hueso": "#ffffff",
-        arena: "#D3CFC3",
-        caramelo: "#B5651D",
-        "gris-oscuro": "#41403E",
+    // TUS COLORES, AHORA EN camelCase
+    colors: {
+      blancoHueso: "#ffffff", // Cambiado de "blanco-hueso"
+      arena: "#D3CFC3",
+      caramelo: "#B5651D",
+      grisOscuro: "#41403E", // Cambiado de "gris-oscuro"
 
-        "brand-bg": "#ffffff",
-        "brand-primary-text": "#41403E",
-        "brand-secondary-text": "#41403E",
-        "brand-accent": "#B5651D",
-        "brand-light": "#ffffff",
-        "brand-border": "#D3CFC3",
-        "brand-primary": "#000000",
-      },
+      brandBg: "#ffffff", // Cambiado
+      brandPrimaryText: "#41403E", // Cambiado
+      brandSecondaryText: "#41403E", // Cambiado
+      brandAccent: "#B5651D", // Cambiado
+      brandLight: "#ffffff", // Cambiado
+      brandBorder: "#D3CFC3", // Cambiado
+      brandPrimary: "#000000", // Cambiado
+      
+      transparent: 'transparent',
+      current: 'currentColor',
+    },
+    extend: {
       fontFamily: {
         roboto: ["Roboto", "sans-serif"],
         poppins: ["Poppins", "sans-serif"],

@@ -13,9 +13,12 @@
   }
 
   body {
-    font-family: 'Inter', sans-serif; /* Usar directamente, sin @apply */
-    @apply text-gris-oscuro bg-blanco-hueso;
-    -webkit-font-smoothing: antialiased;
+    /* ✅ Usamos directamente la fuente sin depender de una clase Tailwind */
+    font-family: 'Inter', sans-serif;
+
+    /* ✅ Aplicamos colores desde Tailwind */
+    @apply text-gris-oscuro bg-blancoHueso antialiased;
+
     -moz-osx-font-smoothing: grayscale;
   }
 

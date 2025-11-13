@@ -7,7 +7,7 @@
     "dev": "concurrently \"npm run server\" \"vite --host\"",
     "server": "npx tsx watch server/index.ts",
     "build": "npm run build:server && npm run build:client",
-    "build:server": "tsc",
+    "build:server": "tsc -p tsconfig.server.json",
     "build:client": "vite build",
     "start": "node dist/server/index.js",
     "lint": "eslint .",
