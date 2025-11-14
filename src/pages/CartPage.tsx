@@ -3,6 +3,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { Trash2, Plus, Minus, ArrowLeft } from "lucide-react";
 import { useCart } from "../hooks/useCart.tsx";
 
+interface ImportMetaEnv {
+  readonly VITE_API_BASE_URL: string;
+}
+
+declare global {
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
+}
+
 const CartPage: React.FC = () => {
   const {
     cartItems,

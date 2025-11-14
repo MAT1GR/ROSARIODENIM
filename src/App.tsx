@@ -16,7 +16,6 @@ import ProductPage from "./pages/ProductPage";
 import SizeGuidePage from "./pages/SizeGuidePage";
 import AdminPage from "./pages/AdminPage";
 import CheckoutPage from "./pages/CheckoutPage";
-import CheckoutInfoPage from "./pages/CheckoutInfoPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import ScrollToTop from "./components/ScrollToTop";
 

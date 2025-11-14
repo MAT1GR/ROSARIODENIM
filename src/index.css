@@ -1,10 +1,11 @@
 /* Import de Google Fonts (un solo import para todo) */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Poppins:wght@300;400;500;600;700&display=swap");
 
-/* Tailwind directives */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* PASO CLAVE: 
+  Importa los estilos de Tailwind v4.
+  Esto reemplaza a @tailwind base, components, y utilities 
+*/
+@import "tailwindcss";
 
 /* Base styles personalizados */
 @layer base {
@@ -13,11 +14,15 @@
   }
 
   body {
-    /* ✅ Usamos directamente la fuente sin depender de una clase Tailwind */
     font-family: 'Inter', sans-serif;
 
-    /* ✅ Aplicamos colores desde Tailwind */
-    @apply text-gris-oscuro bg-blancoHueso antialiased;
+    /* PASO CLAVE:
+      Usamos las variables CSS que Tailwind v4 crea automáticamente.
+      (Ya no se usa theme())
+    */
+    color: var(--color-grisoscuro);
+    background-color: var(--color-blancoHueso);
+    @apply antialiased;
 
     -moz-osx-font-smoothing: grayscale;
   }
