@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    /* Opciones fundamentales para Node.js ESM */
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    /* Ruta de salida */
+    "outDir": "./dist",
+
+    /* Opciones estándar */
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "server",         /* Todo tu código de /server */
+    "src/lib/db",     /* Tu código de base de datos */
+    "src/types"       /* Tus tipos (si los compartes) */
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

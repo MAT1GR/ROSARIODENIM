@@ -7,7 +7,7 @@
     "dev": "concurrently \"npm run server\" \"vite --host\"",
     "server": "npx tsx watch server/index.ts",
     "build": "npm run build:server && npm run build:client",
-    "build:server": "tsc -p tsconfig.server.json",
+    "build:server": "npx tsc -p tsconfig.server.json",
     "build:client": "vite build",
     "start": "node dist/server/index.js",
     "lint": "eslint .",
@@ -28,7 +28,8 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.8.2",
     "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
@@ -43,7 +44,7 @@
     "concurrently": "^9.2.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
-    "typescript": "^5.9.3",
+    
     "vite": "^5.4.2"
   }
 }

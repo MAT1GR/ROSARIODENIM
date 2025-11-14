@@ -4,6 +4,8 @@ import cors from 'cors';
 import path from 'path';
 
 // --- Tus importaciones de rutas ---
+
+// --- Tus importaciones de rutas ---
 import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
 import categoryRoutes from './routes/categories.js';

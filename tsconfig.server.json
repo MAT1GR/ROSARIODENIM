@@ -1,25 +1,28 @@
 {
   "compilerOptions": {
-    /* Opciones fundamentales para Node.js ESM */
-    "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-
-    /* Ruta de salida */
-    "outDir": "./dist",
-
-    /* Opciones estándar */
-    "strict": true,
-    "skipLibCheck": true,
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "outDir": "dist",
+    "rootDir": ".",
+    "noEmit": false,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "allowJs": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "server",         /* Todo tu código de /server */
-    "src/lib/db",     /* Tu código de base de datos */
-    "src/types"       /* Tus tipos (si los compartes) */
+    "server/**/*.ts",
+    "src/lib/**/*.ts",
+    "src/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist"
   ]
 }
