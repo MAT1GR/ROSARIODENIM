@@ -2,9 +2,7 @@
 import initSqlJs, { type SqlJsStatic, type Database } from "sql.js";
 import fs from "fs";
 import path from "path";
-import { createRequire } from "module";
 
-const require = createRequire(import.meta.url);
 
 let SQL: SqlJsStatic;
 let DB: Database;
@@ -15,30 +13,28 @@ const getDbPath = (): string => {
   return path.resolve(process.cwd(), "data", "database.sqlite");
 };
 
-const locateWasm = (file: string): string => {
-    // Path for production (cPanel), as per user instructions and build script
-    const prodPath = path.resolve(process.cwd(), "dist", file);
+const getWasmBinary = (): ArrayBuffer => {
+    const wasmFileName = "sql-wasm.wasm";
+
+    // 1. Production path (as determined by the build script)
+    const prodPath = path.resolve(process.cwd(), "dist", wasmFileName);
     if (fs.existsSync(prodPath)) {
-        return prodPath;
+        return fs.readFileSync(prodPath).buffer;
     }
 
-    // Fallback path for local development (e.g., running with tsx)
-    try {
-        const devPath = require.resolve('sql.js/dist/sql-wasm.wasm');
-        if (fs.existsSync(devPath)) {
-            return devPath;
-        }
-    } catch (e) {
-        console.warn("[DB] Could not find wasm file via require.resolve. This is normal in production.");
+    // 2. Development path (inside node_modules)
+    const devPath = path.resolve(process.cwd(), "node_modules", "sql.js", "dist", wasmFileName);
+    if (fs.existsSync(devPath)) {
+        return fs.readFileSync(devPath).buffer;
     }
-    
-    // Final fallback based on user's original instruction
-    return "sql-wasm.wasm";
+
+    throw new Error(`[DB] Could not find ${wasmFileName}. Looked in: ${prodPath} and ${devPath}`);
 };
 
 export async function initializeDatabase(): Promise<Database> {
   console.log("[DB] Initializing sql.js...");
-  SQL = await initSqlJs({ locateFile: locateWasm });
+  const wasmBinary = getWasmBinary();
+  SQL = await initSqlJs({ wasmBinary });
 
   const dbPath = getDbPath();
   const exists = fs.existsSync(dbPath);
