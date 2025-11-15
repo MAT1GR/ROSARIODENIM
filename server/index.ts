@@ -1,9 +1,49 @@
-// import 'dotenv/config'; // <-- COMENTADO
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { initializeDatabase, saveDatabase, getDB } from './lib/db/connection.js';
+import { initializeSchema } from './lib/db/init.js';
 
-// --- Tus importaciones de rutas ---
+// --- Database Initialization ---
+try {
+  await initializeDatabase();
+  initializeSchema();
+  console.log("[DB] Database initialized successfully.");
+} catch (err) {
+  console.error("[DB] FATAL: Error initializing database:", err);
+  process.exit(1); // Exit if DB fails to load
+}
+
+// --- Graceful Shutdown ---
+const gracefulSave = () => {
+  try {
+    console.log("[DB] Saving database before exit...");
+    saveDatabase();
+  } catch (e) {
+    console.error("[DB] Error saving database during shutdown:", e);
+  }
+};
+
+process.on("SIGINT", () => { gracefulSave(); process.exit(0); });
+process.on("SIGTERM", () => { gracefulSave(); process.exit(0); });
+process.on("uncaughtException", (err, origin) => {
+  console.error(`Uncaught Exception: ${err.message} at ${origin}`);
+  gracefulSave();
+  process.exit(1);
+});
+process.on("unhandledRejection", (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  gracefulSave();
+  process.exit(1);
+});
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.resolve();
+
+// --- Import rutas (usa .js para que funcione en dist) ---
 import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
 import categoryRoutes from './routes/categories.js';
@@ -18,44 +58,43 @@ import paymentRoutes from './controllers/paymentController.js';
 
 const app = express();
 
-// --- Configuración de CORS ---
-app.use(cors({ origin: 'https://denimrosario.com.ar' }));
+// --- CORS ---
+app.use(cors({
+  origin: ['https://denimrosario.com.ar', 'http://localhost:5173'],
+  credentials: true
+}));
+
 app.use(express.json());
 
-// --- SERVIR ARCHIVOS ESTÁTICOS (CORREGIDO) ---
-const __dirname = process.cwd(); // __dirname es ~/backend
 
-// 1. Servir el Frontend (React)
-// COMENTADO: 'public_html' lo maneja.
-// app.use(express.static(path.join(__dirname, '..')));
-
-// 2. Servir las Imágenes (public/uploads)
-// ¡CORREGIDO! Esto ahora busca la carpeta 'public' DENTRO de '~/backend'
-app.use(express.static(path.join(__dirname, 'public')));
+// --- Archivos estáticos ---
+// dist/server/index.js → subir 2 niveles → public/uploads
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 
-// --- Puerto de Producción ---
-const PORT = process.env.PORT || 3001;
+// --- Prefijo /api para Vite ---
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/shipping', shippingRoutes);
+app.use('/api/testimonials', testimonialsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/payments', paymentRoutes);
 
-// --- API Routes (SIN EL PREFIJO /api) ---
-app.use('/auth', authRoutes);
-app.use('/products', productRoutes);
-app.use('/categories', categoryRoutes);
-app.use('/orders', orderRoutes);
-app.use('/customers', customerRoutes);
-app.use('/settings', settingsRoutes);
-app.use('/dashboard', dashboardRoutes);
-app.use('/shipping', shippingRoutes);
-app.use('/testimonials', testimonialsRoutes);
-app.use('/notifications', notificationRoutes);
-app.use('/payments', paymentRoutes);
-
-// --- "Catch-All" para React (CORREGIDO) ---
-// COMENTADO: 'public_html' lo maneja.
-// app.get(/(.*)/, (req, res) => {
-//   res.sendFile(path.join(__dirname, '..', 'index.html'));
-// });
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server listening on http://localhost:${PORT}`);
+// --- Debug Endpoint ---
+app.get("/api/debug/db", (req, res) => {
+  try {
+    getDB();
+    res.json({ ok: true, message: "Database is initialized." });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
+
+// --- Puerto ---
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

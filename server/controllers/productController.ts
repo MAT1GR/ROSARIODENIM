@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { db } from '../../src/lib/database.js';
+import { db } from '../lib/database.js';
+
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {

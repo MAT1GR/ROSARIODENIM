@@ -1,7 +1,7 @@
 // mat1gr/rosariodenim/ROSARIODENIM-cefd39a742f52a93c451ebafdb5a8b992e99e78c/server/emailService.ts
 // server/emailService.ts
 import nodemailer from 'nodemailer';
-import { Order, CartItem } from '../src/types/index.js';
+import { Order, CartItem } from '../server/types/index.js';
 
 // This service is responsible for sending all application emails.
 // It's configured to use Ethereal for testing by default.

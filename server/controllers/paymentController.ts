@@ -1,9 +1,10 @@
 // mat1gr/rosariodenim/ROSARIODENIM-cefd39a742f52a93c451ebafdb5a8b992e99e78c/server/controllers/paymentController.ts
 import { Request, Response, Router } from "express";
 import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
-import { db } from "../../src/lib/database.js";
+import { db } from '../lib/database.js';
+
 import "dotenv/config";
-import { CartItem } from "../../src/types/index.js";
+import { CartItem } from "../../server/types/index.js";
 
 const router = Router();
 
@@ -105,14 +106,14 @@ const processPayment = async (req: Request, res: Response) => {
       const validatedItems = [];
 
       for (const clientItem of clientOrder.items) {
-        const product = await db.products.getById(clientItem.product.id);
+        const product = db.products.getById(clientItem.product.id);
         if (!product) {
           console.error(`Product not found for ID: ${clientItem.product.id}`);
           return res.status(404).json({ message: `Producto no encontrado: ${clientItem.product.name}` });
         }
 
         // Validate stock for the specific size
-        const productSizes = JSON.parse(product.sizes as any);
+        const productSizes = product.sizes as any;
         if (!productSizes[clientItem.size] || productSizes[clientItem.size].stock < clientItem.quantity) {
           console.error(`Insufficient stock for ${product.name} (Size: ${clientItem.size})`);
           return res.status(400).json({ message: `Stock insuficiente para ${product.name} (Talle: ${clientItem.size})` });
@@ -146,10 +147,10 @@ const processPayment = async (req: Request, res: Response) => {
         totalSpent: result.transaction_amount!,
       };
 
-      const customerId = await db.customers.findOrCreate(customerData);
-      await db.products.updateProductStock(clientOrder.items); // Use clientOrder.items for stock update
+      const customerId = db.customers.findOrCreate(customerData);
+      db.products.updateProductStock(clientOrder.items); // Use clientOrder.items for stock update
 
-      const newOrderId = await db.orders.create({
+      const newOrderId = db.orders.create({
         customerId: customerId.toString(),
         customerName: customerData.name,
         customerEmail: customerData.email,
@@ -222,7 +223,7 @@ const createTransferOrder = async (req: Request, res: Response) => {
 
     for (const clientItem of clientItems) {
       console.log(`Validating product ID: ${clientItem.product.id}, Size: ${clientItem.size}, Quantity: ${clientItem.quantity}`);
-      const product = await db.products.getById(clientItem.product.id);
+      const product = db.products.getById(clientItem.product.id);
       if (!product) {
         console.error(`Product not found in DB for ID: ${clientItem.product.id}`);
         return res.status(404).json({ message: `Producto no encontrado: ${clientItem.product.name}` });
@@ -232,7 +233,7 @@ const createTransferOrder = async (req: Request, res: Response) => {
       // Validate stock for the specific size
       let productSizes;
       try {
-        productSizes = JSON.parse(product.sizes as any);
+        productSizes = product.sizes as any;
       } catch (jsonError) {
         console.error(`Error parsing product sizes for product ID ${product.id} (${product.name}):`, jsonError);
         return res.status(400).json({ message: `Error de configuración del producto: el formato de talles para "${product.name}" es inválido. Por favor, contacta a soporte.` });
@@ -268,10 +269,10 @@ const createTransferOrder = async (req: Request, res: Response) => {
     };
     console.log("Customer Data:", customerData);
 
-    const customerId = await db.customers.findOrCreate(customerData);
+    const customerId = db.customers.findOrCreate(customerData);
     console.log("Customer ID:", customerId);
     
-    await db.products.updateProductStock(clientItems);
+    db.products.updateProductStock(clientItems);
     console.log("Product stock updated.");
 
     const newOrderData = {
@@ -296,10 +297,10 @@ const createTransferOrder = async (req: Request, res: Response) => {
     };
     console.log("New Order Data prepared:", newOrderData);
 
-    const newOrderId = await db.orders.create(newOrderData);
+    const newOrderId = db.orders.create(newOrderData);
     console.log("Order created in DB with ID:", newOrderId);
 
-    const createdOrder = await db.orders.getById(newOrderId.toString());
+    const createdOrder = db.orders.getById(newOrderId.toString());
     if (!createdOrder) {
       console.error(`Order with ID ${newOrderId} not found after creation.`);
       return res

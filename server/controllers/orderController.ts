@@ -1,6 +1,5 @@
-// mat1gr/rosariodenim/ROSARIODENIM-cefd39a742f52a93c451ebafdb5a8b992e99e78c/server/controllers/orderController.ts
 import { Request, Response } from 'express';
-import { db } from '../../src/lib/database.js';
+import { db } from '../lib/database.js';
 
 export const createOrder = async (req: Request, res: Response) => {
     try {
@@ -26,7 +25,7 @@ export const createOrder = async (req: Request, res: Response) => {
             createdAt: new Date(),
         };
 
-        const orderId = await db.orders.create(newOrder); // Assuming db.orders.create exists and returns an ID
+        const orderId = db.orders.create(newOrder); // Assuming db.orders.create exists and returns an ID
         res.status(201).json({ message: 'Pedido creado exitosamente', orderId });
     } catch (error) {
         console.error("Error creating order:", error);
@@ -36,7 +35,7 @@ export const createOrder = async (req: Request, res: Response) => {
 
 export const getAllOrders = async (req: Request, res: Response) => {
     try {
-        const orders = await db.orders.getAll();
+        const orders = db.orders.getAll();
         res.json(orders);
     } catch (error) {
         console.error("Error fetching orders:", error);
@@ -47,7 +46,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
 export const updateOrderStatus = async (req: Request, res: Response) => {
     try {
         const { status } = req.body;
-        const updated = await db.orders.updateStatus(req.params.id, status);
+        const updated = db.orders.updateStatus(req.params.id, status);
         if (updated) {
             res.json({ message: 'Estado del pedido actualizado' });
         } else {
@@ -61,7 +60,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
 export const getCustomerOrders = async (req: Request, res: Response) => {
     try {
-        const orders = await db.orders.getByCustomerId(req.params.id);
+        const orders = db.orders.getByCustomerId(req.params.id);
         res.json(orders);
     } catch (error) {
         console.error("Error fetching customer orders:", error);
