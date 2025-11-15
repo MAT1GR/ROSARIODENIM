@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../../src/lib/database.js';
+import { db } from '../../../src/lib/database.js';
 
 export const login = async (req: Request, res: Response) => {
   const { username, password } = req.body;
