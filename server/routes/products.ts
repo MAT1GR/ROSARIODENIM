@@ -32,7 +32,6 @@ router.get('/all', getAllAdminProducts);
 router.get('/newest', getNewProducts);
 router.get('/bestsellers', getBestsellerProducts);
 router.get('/:id', getProductById);
-// --- MODIFICADO: Aplicamos el middleware de carga de archivos ---
 router.post('/', upload.array('newImages', 10), createProduct);
 router.put('/:id', upload.array('newImages', 10), updateProduct);
 router.delete('/:id', deleteProduct);

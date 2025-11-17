@@ -1,15 +1,15 @@
 {
   "name": "rosariodenim-backend",
   "private": true,
-  "version": "1.0.0",
   "type": "module",
+  "version": "1.0.0",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"vite --host\"",
     "server": "npx tsx watch server/index.ts",
-    "build": "npm run build:server && npm run build:client",
     "build:server": "tsc -p tsconfig.server.json",
-    "postbuild:server": "node scripts/copy-wasm.js",
     "build:client": "vite build",
+    "build": "npm run build:server && npm run build:client",
+    "postbuild:server": "node scripts/copy-wasm.cjs",
     "start": "node dist/index.js",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -28,6 +28,7 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.8.2",
+    "serve": "^14.2.5",
     "sql.js": "^1.13.0"
   },
   "devDependencies": {

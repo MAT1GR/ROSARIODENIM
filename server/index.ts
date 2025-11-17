@@ -2,19 +2,22 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { initializeDatabase, saveDatabase, getDB } from './lib/db/connection.js';
 import { initializeSchema } from './lib/db/init.js';
 
 // --- Database Initialization ---
-try {
-  await initializeDatabase();
-  initializeSchema();
-  console.log("[DB] Database initialized successfully.");
-} catch (err) {
-  console.error("[DB] FATAL: Error initializing database:", err);
-  process.exit(1); // Exit if DB fails to load
+async function bootstrap() {
+  try {
+    await initializeDatabase();
+    initializeSchema();
+    console.log("[DB] Database initialized successfully.");
+  } catch (err) {
+    console.error("[DB] FATAL: Error initializing database:", err);
+    process.exit(1);
+  }
 }
+
+bootstrap();
 
 // --- Graceful Shutdown ---
 const gracefulSave = () => {
@@ -39,11 +42,9 @@ process.on("unhandledRejection", (reason, promise) => {
   process.exit(1);
 });
 
-
-const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.resolve();
 
-// --- Import rutas (usa .js para que funcione en dist) ---
+// --- Import rutas (.js obligatorio para dist) ---
 import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
 import categoryRoutes from './routes/categories.js';
@@ -66,11 +67,8 @@ app.use(cors({
 
 app.use(express.json());
 
-
 // --- Archivos estáticos ---
-// dist/server/index.js → subir 2 niveles → public/uploads
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
-
 
 // --- Prefijo /api para Vite ---
 app.use('/api/auth', authRoutes);
