@@ -16,11 +16,6 @@ import { type Database, type QueryExecResult } from "sql.js";
 
 // --- Helpers ---
 
-/**
- * Converts sql.js exec results to a more usable array of objects.
- * @param {QueryExecResult[] | undefined} res - The result from db.exec().
- * @returns {any[]} An array of objects, where each object represents a row.
- */
 const toObjects = (res: QueryExecResult[] | undefined): any[] => {
   if (!res || res.length === 0) return [];
   const [firstResult] = res;
@@ -170,7 +165,6 @@ export const productService = {
   updateProductStock(items: CartItem[]): void {
     const db = getDB();
     for (const item of items) {
-      // Use a direct SELECT to get the raw data, avoiding the parse/re-stringify cycle
       const stmt = db.prepare('SELECT * FROM products WHERE id = ?');
       const productRow = stmt.getAsObject([item.product.id]);
       stmt.free();
@@ -181,7 +175,6 @@ export const productService = {
           sizes[item.size].stock -= item.quantity;
           db.run('UPDATE products SET sizes = ? WHERE id = ?', [JSON.stringify(sizes), productRow.id]);
         } else {
-          // Optional: throw an error if stock is insufficient, though this should be validated before calling
           console.warn(`[Stock] Insufficient stock for product ${productRow.id}, size ${item.size}.`);
         }
       }
@@ -341,20 +334,22 @@ export const orderService = {
         customerName,
         customerEmail,
         customerPhone,
-        customerDocNumber,
+        customerDocNumber, // Puede venir undefined
         items,
         total,
         status,
         createdAt = new Date()
     } = orderData;
 
-    const shippingStreetName = orderData.shippingStreetName || shipping.streetName;
-    const shippingStreetNumber = orderData.shippingStreetNumber || shipping.streetNumber;
-    const shippingApartment = orderData.shippingApartment || shipping.apartment;
-    const shippingDescription = orderData.shippingDescription || shipping.description;
-    const shippingCity = orderData.shippingCity || shipping.city;
-    const shippingPostalCode = orderData.shippingPostalCode || shipping.postalCode;
-    const shippingProvince = orderData.shippingProvince || shipping.province;
+    // --- CORRECCIÓN: Añadimos '|| null' para asegurar que no sea undefined ---
+    const shippingStreetName = orderData.shippingStreetName || shipping.streetName || null;
+    const shippingStreetNumber = orderData.shippingStreetNumber || shipping.streetNumber || null;
+    const shippingApartment = orderData.shippingApartment || shipping.apartment || null;
+    const shippingDescription = orderData.shippingDescription || shipping.description || null;
+    const shippingCity = orderData.shippingCity || shipping.city || null;
+    const shippingPostalCode = orderData.shippingPostalCode || shipping.postalCode || null;
+    const shippingProvince = orderData.shippingProvince || shipping.province || null;
+    
     const shippingCost = orderData.shippingCost ?? (orderData.shipping?.cost ?? 0);
     const shippingName = orderData.shippingName || (orderData.shipping?.name || 'No especificado');
 
@@ -368,7 +363,7 @@ export const orderService = {
         customerName,
         customerEmail,
         customerPhone,
-        customerDocNumber,
+        customerDocNumber || null, // Aseguramos null aquí también
         JSON.stringify(items),
         total,
         status,
