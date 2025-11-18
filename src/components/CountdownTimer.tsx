@@ -47,16 +47,17 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ className }) => {
       if (timeLeft[interval as keyof typeof timeLeft] !== undefined) {
         timerComponents.push(
           <div key={interval} className="text-center">
-            <span className="text-[1.1rem] tracking-[2px] text-[#f8f8f8] font-inter font-light">
+            {/* Estilos para que los números se vean grandes y en negrita */}
+            <span className="text-3xl sm:text-5xl tracking-[2px] text-[#f8f8f8] font-inter font-bold">
               {String(timeLeft[interval as keyof typeof timeLeft]).padStart(2, '0')}
             </span>
-            <span className="block text-xs sm:text-sm uppercase">{interval}</span>
+            <span className="block text-xs sm:text-base uppercase">{interval}</span>
           </div>
         );
-        if (index < Object.keys(timeLeft).length - 1) { // Add separator if not the last item
+        if (index < Object.keys(timeLeft).length - 1) { 
           timerComponents.push(
             <div key={`separator-${interval}`} className="flex items-center justify-center h-full">
-              <div className="w-px bg-[#f8f8f8] h-2/3 mx-1 sm:mx-2 md:mx-4"></div> {/* Vertical line */}
+              <div className="w-px bg-[#f8f8f8] h-2/3 mx-1 sm:mx-2 md:mx-4"></div>
             </div>
           );
         }
@@ -65,7 +66,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ className }) => {
 
   return (
     <div className={className}>
-      <div className="flex justify-center gap-1 sm:gap-2 md:gap-4">
+      <div className="flex justify-center gap-2 sm:gap-4 md:gap-6">
         {timerComponents.length ? timerComponents : <span>¡El drop es ahora!</span>}
       </div>
     </div>

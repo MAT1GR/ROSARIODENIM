@@ -28,27 +28,48 @@ const PaymentSuccessPage: React.FC = () => {
         const queryParams = new URLSearchParams(location.search);
         const orderId = queryParams.get('orderId');
 
-        if (orderId) {
+        // *** CORRECCIÓN CLAVE: Usamos AbortController para limpiar el fetch anterior ***
+        const controller = new AbortController();
+        const signal = controller.signal;
+
+        if (orderId && !order) { // Solo si tenemos ID y la orden AÚN NO HA SIDO CARGADA
             const fetchOrder = async () => {
+                setLoading(true);
+                setError(null);
                 try {
-                    const response = await fetch(`/api/orders/${orderId}`);
+                    const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL || '';
+                    const fetchUrl = `${apiBaseUrl}/api/orders/${orderId}`;
+
+                    const response = await fetch(fetchUrl, { signal });
+                    
                     if (!response.ok) {
-                        throw new Error('No pudimos cargar los detalles de tu pedido.');
+                        throw new Error(`No pudimos cargar los detalles de tu pedido. Código: ${response.status}`);
                     }
                     const data: Order = await response.json();
                     setOrder(data);
                 } catch (err: any) {
-                    setError(err.message);
+                    if (err.name !== 'AbortError') {
+                        console.error("Error fetching order:", err);
+                        setError(err.message || 'Error de conexión. Intenta recargar.');
+                    }
                 } finally {
                     setLoading(false);
                 }
             };
             fetchOrder();
-        } else {
+        } else if (!orderId) {
             setError('No se encontró un número de pedido válido.');
             setLoading(false);
+        } else if (order) {
+            setLoading(false); // Si ya se cargó, simplemente desactivamos el loading.
         }
-    }, [clearCart, location.search]);
+
+        // Función de limpieza: Se ejecuta si el componente se desmonta o el efecto se re-ejecuta
+        return () => {
+            controller.abort();
+        };
+
+    }, [clearCart, location.search, order]); // Añadido 'order' a dependencias para manejar el flujo
 
     const getEstimatedDeliveryDate = () => {
         const date = new Date();
@@ -67,7 +88,7 @@ const PaymentSuccessPage: React.FC = () => {
                 <div className="text-center">
                     <h2 className="text-2xl font-bold text-red-600 mb-4">Hubo un problema</h2>
                     <p className="text-gris-oscuro mb-6">{error || 'No se pudo cargar la información del pedido.'}</p>
-                    <p className="text-sm text-gray-500">Si el pago fue debitado, por favor contactate con nosotros.</p>
+                    <p className="text-sm text-gray-500">Si el pago fue debitado, por favor contactate con nosotros y proporciona el ID de la transacción de Mercado Pago.</p>
                     <Link
                         to="/contacto" // Assuming a contact page exists
                         className="mt-6 inline-block bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-lg font-medium transition-colors"

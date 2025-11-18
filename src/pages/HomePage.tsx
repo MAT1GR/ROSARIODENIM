@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkle, Box, Eye } from "lucide-react";
-import { Product } from "../types";
+import { Product } from "../../server/types";
 import ProductCard from "../components/ProductCard";
 import SkeletonCard from "../components/SkeletonCard";
 import WhatsAppButton from "../components/WhatsAppButton";
 import homeImage from '../assets/home.png'; // Import the image
+import CountdownTimer from "../components/CountdownTimer"; // Importado
 
 const HomePage: React.FC = () => {
   const [newProducts, setNewProducts] = useState<Product[]>([]);
@@ -107,24 +108,6 @@ const HomePage: React.FC = () => {
     </div>
   );
 
-  const getNextThursday = () => {
-    const today = new Date();
-    const dayOfWeek = today.getDay(); // Sunday = 0, Monday = 1, ..., Saturday = 6
-    const daysUntilThursday = (4 - dayOfWeek + 7) % 7;
-    const nextThursday = new Date(today);
-    nextThursday.setDate(today.getDate() + daysUntilThursday);
-    
-    // If it's Thursday but past 9 PM, calculate for the next week's Thursday
-    if (dayOfWeek === 4 && today.getHours() >= 21) {
-      nextThursday.setDate(today.getDate() + 7);
-    }
-
-    const day = nextThursday.getDate();
-    const month = nextThursday.toLocaleString('es-ES', { month: 'long' });
-
-    return `JUEVES ${day} DE ${month.toUpperCase()} A LAS 21HS`;
-  };
-
   const handleScrollToLastDrop = () => {
     lastDropSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -134,21 +117,18 @@ const HomePage: React.FC = () => {
       <div className="bg-gradient-to-b from-[#0d0d0d] to-[#1a1a1a] text-white">
                     {/* Hero Section */}
                     <section
-                      className="min-h-screen relative flex flex-col items-center justify-center text-center px-4 pt-[15vh] pb-[20vh] bg-cover bg-center"
+                      className="min-h-[70vh] relative flex flex-col items-center justify-center text-center px-4 py-20 lg:py-32 bg-cover bg-center" 
                       style={{ backgroundImage: `url(${homeImage})` }}
                     >
                       <div className="absolute top-0 left-0 w-full h-full bg-[rgba(0,0,0,0.45)]" />
                       <div className="z-10 w-full px-4">
-            <section className="countdown-section">
-              <h3>NUEVO DROP EN:</h3>
-              <div className="countdown">
-                <div><span id="days">00</span><p>Días</p></div>
-                <div><span id="hours">00</span><p>Horas</p></div>
-                <div><span id="minutes">00</span><p>Minutos</p></div>
-                <div><span id="seconds">00</span><p>Segundos</p></div>
-              </div>
-            </section>
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-2 mt-[-2rem]">
+            <div className="countdown-section">
+              {/* Ajuste de margen para acercar */}
+              <h3 className="text-xl font-medium tracking-wide mb-2">PRÓXIMO DROP EN:</h3> 
+              <CountdownTimer /> {/* Eliminado margen inferior */}
+            </div>
+            {/* CORRECCIÓN: Se ajusta mt-4 a mt-2 para subir el botón */}
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-2 mt-0"> 
               <button
                 onClick={handleScrollToLastDrop}
                 className="inline-flex items-center gap-2 bg-[#F5F5DC] text-[#2C3E50] px-4 sm:px-10 py-2 sm:py-3 rounded-sm text-sm font-bold group transition-colors"
@@ -181,8 +161,9 @@ const HomePage: React.FC = () => {
               </form>
             )}
           </div>
+          {/* Solo se deja el indicador de flecha */}
           <p className="absolute bottom-8 left-1/2 -translate-x-1/2 text-base text-white animate-pulse-slow">
-            Deslizá para ver los últimos jeans disponibles ↓
+            ↓
           </p>
         </section>
 
@@ -194,17 +175,29 @@ const HomePage: React.FC = () => {
               <h2 className="text-3xl lg:text-4xl font-medium tracking-[1px] uppercase">
                 ÚLTIMO DROP
               </h2>
-              <p className="mt-2 text-sm text-red-500 font-semibold">
-                ¡Solo queda una unidad de cada producto!
+              <p className="mt-2 text-sm text-gray-700">
+                Prendas únicas. No repetimos stock. Lo que ves es lo último.
               </p>
             </div>
             {loading ? renderSkeletons() : error ? <p className="text-center text-red-500">{error}</p> : newProducts.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8">
                 {newProducts.map(p => <ProductCard product={p} key={p.id} theme="light" />)}
               </div>
             ) : (
               <p className="text-center text-gray-500">No hay nuevos productos disponibles.</p>
             )}
+          </div>
+        </section>
+
+        {/* Size Guide Section */}
+        <section className="py-16 lg:py-24 bg-neutral-100 text-black">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight uppercase">
+              Encontrá tu talle en 10 segundos
+            </h2>
+            <Link to="/guia-de-talles" className="mt-6 inline-block bg-black text-white px-10 py-3 rounded-sm text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors">
+              Ver guía
+            </Link>
           </div>
         </section>
 
@@ -221,14 +214,14 @@ const HomePage: React.FC = () => {
                 <Sparkle className="w-10 h-10 mb-4 text-gray-800" />
                 <h3 className="text-lg font-semibold uppercase tracking-wider">Un solo jean por modelo</h3>
                 <p className="mt-2 text-sm text-gray-600">
-                  Cada prenda es única y no repetimos stock.
+                  Cada prenda es única y no repetimos stock. <span className="font-bold">Nunca vas a ver otra igual.</span>
                 </p>
               </div>
               <div className="flex flex-col items-center">
                 <Box className="w-10 h-10 mb-4 text-gray-800" />
-                <h3 className="text-lg font-semibold uppercase tracking-wider">Drops limitados cada semana</h3>
+                <h3 className="text-lg font-semibold uppercase tracking-wider">Drops limitados</h3>
                 <p className="mt-2 text-sm text-gray-600">
-                  Colecciones pequeñas, seleccionadas a mano en Rosario.
+                  Colecciones pequeñas, seleccionadas a mano en Rosario. <span className="font-bold">Si te gusta, no lo dejes pasar.</span>
                 </p>
               </div>
               <div className="flex flex-col items-center">

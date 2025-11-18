@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, CreditCard, Banknote } from "lucide-react";
 import { useCart } from "../hooks/useCart";
-import { CartItem as CartItemType } from "../types";
+import { CartItem as CartItemType } from "../../server/types";
 
 interface ShippingOption {
   id: string;
@@ -54,7 +54,7 @@ const CheckoutPage: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCalculateShipping = async () => {
+  const handleCalculateShipping = useCallback(async () => {
     if (formData.postalCode.length < 4) return;
     setIsCalculatingShipping(true);
     setShippingOptions([]);
@@ -84,7 +84,17 @@ const CheckoutPage: React.FC = () => {
     } finally {
       setIsCalculatingShipping(false);
     }
-  };
+  }, [formData.postalCode]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.postalCode.length >= 4) {
+        handleCalculateShipping();
+      }
+    }, 500); // Debounce de 500ms
+
+    return () => clearTimeout(timer);
+  }, [formData.postalCode, handleCalculateShipping]);
 
   const handleFinalizeOrder = async () => {
     setIsLoading(true);
@@ -190,6 +200,7 @@ const CheckoutPage: React.FC = () => {
                 <legend className="text-xl font-bold mb-4 text-gris-oscuro">
                   2. DATOS DE ENVÍO
                 </legend>
+                <p className="text-sm text-gray-600 -mt-2 mb-4">Envíamos desde Rosario en 24–48h.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <InputField
                     name="firstName"
@@ -214,25 +225,13 @@ const CheckoutPage: React.FC = () => {
                   required
                   type="tel"
                 />
-                <div className="flex gap-2 items-stretch">
-                  <InputField
-                    name="postalCode"
-                    placeholder="Código Postal"
-                    value={formData.postalCode}
-                    onChange={handleChange}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={handleCalculateShipping}
-                    disabled={
-                      isCalculatingShipping || formData.postalCode.length < 4
-                    }
-                    className="px-4 py-3 bg-arena text-gris-oscuro rounded-lg font-medium hover:bg-arena/80 transition-colors disabled:opacity-50 text-sm whitespace-nowrap"
-                  >
-                    {isCalculatingShipping ? "..." : "Calcular"}
-                  </button>
-                </div>
+                <InputField
+                  name="postalCode"
+                  placeholder="Código Postal"
+                  value={formData.postalCode}
+                  onChange={handleChange}
+                  required
+                />
 
                 {shippingOptions.length > 0 && (
                   <div className="space-y-2 pt-2">
@@ -304,7 +303,7 @@ const CheckoutPage: React.FC = () => {
                     id="mercado-pago"
                     title="Mercado Pago"
                     description="Tarjetas de crédito, débito y dinero en cuenta."
-                    icon={<CreditCard />}
+                    icon={<img src="https://logowik.com/content/uploads/images/mercado-pago1721074123.logowik.com.webp" alt="Mercado Pago" className="h-8 rounded-md" />}
                     selected={paymentMethod}
                     onSelect={setPaymentMethod}
                   />
@@ -374,10 +373,15 @@ const CheckoutPage: React.FC = () => {
                 </div>
               )}
 
+              <div className="flex items-center justify-center mt-6 text-sm text-gray-500">
+                <Lock size={16} className="mr-2" />
+                <span>Sitio seguro</span>
+              </div>
+
               <button
                 onClick={handleFinalizeOrder}
                 disabled={isLoading || !isFormComplete}
-                className="w-full mt-6 bg-black text-white py-3 rounded-lg text-lg font-bold transition-colors hover:opacity-80 disabled:opacity-50"
+                className="w-full mt-2 bg-black text-white py-3 rounded-lg text-lg font-bold transition-colors hover:opacity-80 disabled:opacity-50"
               >
                 {isLoading
                   ? "Procesando..."
