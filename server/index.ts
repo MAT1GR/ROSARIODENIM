@@ -1,4 +1,26 @@
 import 'dotenv/config';
+
+const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+if (token) {
+  console.log("[MercadoPago] Access token loaded successfully. Starts with:", token.substring(0, 8));
+} else {
+  console.warn("[MercadoPago] WARNING: Access token not found.");
+}
+
+const apiBaseUrl = process.env.VITE_API_BASE_URL;
+if (apiBaseUrl) {
+    console.log("[Server] VITE_API_BASE_URL is set to:", apiBaseUrl);
+} else {
+    console.warn("[Server] WARNING: VITE_API_BASE_URL is not set.");
+}
+
+const clientUrl = process.env.VITE_CLIENT_URL;
+if (clientUrl) {
+    console.log("[Server] VITE_CLIENT_URL is set to:", clientUrl);
+} else {
+    console.warn("[Server] WARNING: VITE_CLIENT_URL is not set.");
+}
+
 import express from 'express';
 import cors from 'cors';
 import path from 'path';

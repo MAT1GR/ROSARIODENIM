@@ -58,6 +58,21 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     }
 };
 
+export const getOrderById = async (req: Request, res: Response) => {
+    try {
+        const orderId = req.params.id;
+        const order = db.orders.getById(orderId);
+        if (order) {
+            res.json(order);
+        } else {
+            res.status(404).json({ message: 'Pedido no encontrado.' });
+        }
+    } catch (error) {
+        console.error("Error fetching order by ID:", error);
+        res.status(500).json({ message: 'Error al obtener el pedido.' });
+    }
+};
+
 export const getCustomerOrders = async (req: Request, res: Response) => {
     try {
         const orders = db.orders.getByCustomerId(req.params.id);

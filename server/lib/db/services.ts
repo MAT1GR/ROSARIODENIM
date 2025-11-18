@@ -424,7 +424,7 @@ export const customerService = {
     return rows.map(parseCustomer);
   },
 
-  findOrCreate(customerData: { email: string; name: string; phone: string; totalSpent: number }): number {
+  findOrCreate(customerData: { email: string; name: string; phone: string; }): number {
     const db = getDB();
     const stmt = db.prepare('SELECT * FROM customers WHERE email = ?');
     const existingCustomer = stmt.getAsObject([customerData.email]);
@@ -432,25 +432,33 @@ export const customerService = {
     
     if (existingCustomer && existingCustomer.id) {
       db.run(
-        'UPDATE customers SET order_count = order_count + 1, total_spent = total_spent + ? WHERE id = ?',
-        [customerData.totalSpent, existingCustomer.id]
+        'UPDATE customers SET order_count = order_count + 1 WHERE id = ?',
+        [existingCustomer.id]
       );
       saveDatabase();
       return existingCustomer.id as number;
     } else {
       db.run(
-        'INSERT INTO customers (name, email, phone, order_count, total_spent) VALUES (?, ?, ?, 1, ?)',
+        'INSERT INTO customers (name, email, phone, order_count, total_spent) VALUES (?, ?, ?, 1, 0)',
         [
           customerData.name,
           customerData.email,
-          customerData.phone,
-          customerData.totalSpent
+          customerData.phone
         ]
       );
       const id = toObjects(db.exec("SELECT last_insert_rowid() as id"))[0].id;
       saveDatabase();
       return id;
     }
+  },
+
+  updateTotalSpent(customerId: string, amount: number): void {
+    const db = getDB();
+    db.run(
+      'UPDATE customers SET total_spent = total_spent + ? WHERE id = ?',
+      [amount, customerId]
+    );
+    saveDatabase();
   },
 
   getById(customerId: string): Customer | null {
