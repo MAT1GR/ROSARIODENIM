@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { CartItem, Product } from '../types';
+import { CartItem, Product } from '../../server/types';
 
 // 1. Definimos la "forma" (interfaz) de nuestro contexto del carrito
 interface CartContextType {

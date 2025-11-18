@@ -7,13 +7,52 @@ import { CartItem } from "../../server/types/index.js";
 
 const router = Router();
 
+// Helper para validar stock y precios (Reutilizable)
+const validateItemsWithDB = (items: any[]) => {
+  const validatedItems = [];
+  let subtotal = 0;
+
+  for (const item of items) {
+    // 1. Buscamos el producto REAL en la base de datos
+    const dbProduct = db.products.getById(item.product.id);
+    
+    if (!dbProduct) {
+      throw new Error(`Producto no encontrado: ${item.product.name}`);
+    }
+
+    // 2. Verificamos stock
+    // Accedemos a sizes de forma segura
+    const sizes = typeof dbProduct.sizes === 'string' 
+      ? JSON.parse(dbProduct.sizes) 
+      : dbProduct.sizes;
+
+    // Si no existe el talle o no hay stock, lanzamos error
+    if (!sizes[item.size] || sizes[item.size].stock < item.quantity) {
+      throw new Error(`Stock insuficiente para ${dbProduct.name} (Talle: ${item.size})`);
+    }
+
+    // 3. REEMPLAZAMOS EL PRECIO: Usamos dbProduct.price, ignoramos item.product.price
+    validatedItems.push({
+      ...item,
+      product: {
+        ...dbProduct, // Usamos toda la info real de la DB
+        price: Number(dbProduct.price) // Aseguramos que sea el precio real
+      },
+      quantity: Number(item.quantity)
+    });
+
+    subtotal += Number(dbProduct.price) * Number(item.quantity);
+  }
+
+  return { validatedItems, subtotal };
+};
+
 const createMercadoPagoPreference = async (req: Request, res: Response) => {
   try {
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     const apiBaseUrl = process.env.VITE_API_BASE_URL;
 
     if (!accessToken || !apiBaseUrl) {
-      console.error("Error de configuración: Falta token MP o URL base.");
       return res.status(500).json({ message: "Error de configuración del servidor." });
     }
 
@@ -21,33 +60,39 @@ const createMercadoPagoPreference = async (req: Request, res: Response) => {
     const { items, shippingCost, shippingInfo, shipping } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ message: "Carrito inválido." });
+      return res.status(400).json({ message: "Carrito vacío." });
     }
 
-    const safeShippingCost = Number(shippingCost) || 0;
+    // --- PASO CRÍTICO DE SEGURIDAD ---
+    // Recalculamos todo con datos de la DB. Si el usuario modificó el precio en el front, aquí se ignora.
+    let validationResult;
+    try {
+        validationResult = validateItemsWithDB(items);
+    } catch (e: any) {
+        return res.status(400).json({ message: e.message });
+    }
 
+    const { validatedItems, subtotal } = validationResult;
+    const safeShippingCost = Number(shippingCost) || 0;
+    const total = subtotal + safeShippingCost;
+
+    // Creamos o buscamos cliente
     const customerId = db.customers.findOrCreate({
       email: shippingInfo.email,
       name: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
       phone: shippingInfo.phone,
     });
 
-    const total = items.reduce((acc: number, item: CartItem) => {
-      return acc + (Number(item.product.price) * Number(item.quantity));
-    }, 0) + safeShippingCost;
-    
-    // --- CORRECCIÓN: Enviamos el objeto shippingInfo completo para que el servicio lo procese ---
-    // --- Además, usamos valores por defecto vacíos para evitar 'undefined' en el objeto ---
+    // Creamos la orden con los items VALIDADOS
     const newOrderId = db.orders.create({
       customerId: customerId.toString(),
       customerName: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
       customerEmail: shippingInfo.email,
       customerPhone: shippingInfo.phone,
       customerDocNumber: shippingInfo.docNumber || null,
-      items: items,
+      items: validatedItems, // Guardamos los items con el precio real
       total: total,
       status: "pending",
-      // Pasamos el objeto completo y dejamos que el servicio maneje la extracción
       shippingInfo: {
           streetName: shippingInfo.streetName || null,
           streetNumber: shippingInfo.streetNumber || null,
@@ -62,11 +107,12 @@ const createMercadoPagoPreference = async (req: Request, res: Response) => {
       createdAt: new Date(),
     });
 
-    const preferenceItems = items.map((item: CartItem) => ({
+    // Preparamos items para MP usando los datos VALIDADOS
+    const preferenceItems = validatedItems.map((item: any) => ({
       id: String(item.product.id),
       title: `${item.product.name} (Talle: ${item.size})`,
       quantity: Number(item.quantity),
-      unit_price: Number(item.product.price),
+      unit_price: Number(item.product.price), // Precio real de DB
       currency_id: "ARS",
     }));
 
@@ -110,7 +156,7 @@ const createMercadoPagoPreference = async (req: Request, res: Response) => {
     console.error("❌ Error MP:", JSON.stringify(error, null, 2));
     res.status(500).json({
       message: "Error al iniciar el pago.",
-      error: error.message || "Error desconocido"
+      error: error.message
     });
   }
 };
@@ -136,7 +182,8 @@ const processPayment = async (req: Request, res: Response) => {
 
       if (paymentResult.status === "approved" && order.status !== 'paid') {
         db.orders.updateStatus(orderId, "paid");
-        db.products.updateProductStock(order.items);
+        // Usamos items de la orden (que ya fueron validados al crearse)
+        db.products.updateProductStock(order.items); 
         db.customers.updateTotalSpent(order.customerId, paymentResult.transaction_amount || order.total);
         console.log(`✅ Orden ${orderId} PAGADA.`);
       } else if (paymentResult.status && paymentResult.status !== 'approved') {
@@ -151,32 +198,24 @@ const processPayment = async (req: Request, res: Response) => {
 };
 
 const createTransferOrder = async (req: Request, res: Response) => {
-  const { items: clientItems, shippingInfo, shipping } = req.body as {
-    items: CartItem[];
-    shippingInfo: any;
-    shipping: { name: string; cost: number };
-  };
+  const { items, shippingInfo, shipping } = req.body;
 
   try {
-    if (!clientItems || clientItems.length === 0) return res.status(400).json({ message: "Carrito vacío." });
+    if (!items || items.length === 0) return res.status(400).json({ message: "Carrito vacío." });
 
-    let subtotal = 0;
-    const validatedItems = [];
-
-    for (const clientItem of clientItems) {
-      const product = db.products.getById(clientItem.product.id);
-      if (!product) return res.status(404).json({ message: `Producto no encontrado: ${clientItem.product.name}` });
-
-      const productSizes = product.sizes as any;
-      if (!productSizes || !productSizes[clientItem.size] || productSizes[clientItem.size].stock < clientItem.quantity) {
-        return res.status(400).json({ message: `Sin stock: ${product.name}` });
-      }
-      subtotal += Number(product.price) * Number(clientItem.quantity);
-      validatedItems.push({ product, size: clientItem.size, quantity: clientItem.quantity });
+    // --- VALIDACIÓN DE SEGURIDAD TAMBIÉN AQUÍ ---
+    let validationResult;
+    try {
+        validationResult = validateItemsWithDB(items);
+    } catch (e: any) {
+        return res.status(400).json({ message: e.message });
     }
 
+    const { validatedItems, subtotal } = validationResult;
     const shippingCost = Number(shipping?.cost) || 0;
-    let finalTotal = (subtotal + shippingCost) * 0.9;
+    
+    // Aplicamos el descuento sobre el subtotal REAL validado
+    const finalTotal = (subtotal + shippingCost) * 0.9; 
 
     const customerId = db.customers.findOrCreate({
       email: shippingInfo.email,
@@ -184,6 +223,7 @@ const createTransferOrder = async (req: Request, res: Response) => {
       phone: shippingInfo.phone,
     });
     
+    // Descontamos stock de los items reales
     db.products.updateProductStock(validatedItems);
 
     const newOrderId = db.orders.create({

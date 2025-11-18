@@ -42,7 +42,8 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
             <Link
               to="/tienda"
               onClick={onClose}
-              className="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-secondary text-white px-8 py-3 rounded-lg font-medium transition-colors group"
+              // CORRECCIÓN DE VISIBILIDAD: Cambiado a bg-black
+              className="inline-flex items-center gap-2 bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-lg font-medium transition-colors group"
             >
               Ver productos
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
@@ -142,7 +143,8 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
               <Link
                 to="/checkout"
                 onClick={onClose}
-                className="w-full block text-center bg-brand-primary hover:bg-brand-secondary text-white py-3 rounded-lg text-lg font-bold transition-colors"
+                // CORRECCIÓN DE VISIBILIDAD: Cambiado a bg-black y hover:bg-gray-800
+                className="w-full block text-center bg-black hover:bg-gray-800 text-white py-3 rounded-lg text-lg font-bold transition-colors"
               >
                 Iniciar Compra
               </Link>

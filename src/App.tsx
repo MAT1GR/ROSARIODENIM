@@ -42,7 +42,7 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/tallas" element={<SizeGuidePage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/payment-success" element={<PaymentSuccessPage />} />
+        <Route path="/pago-exitoso" element={<PaymentSuccessPage />} />
         <Route path="/pedido-pendiente/:id" element={<TransferPendingPage />} />
         <Route path="/cambios-y-devoluciones" element={<ReturnsPolicyPage />} />
         <Route path="/preguntas-frecuentes" element={<FAQPage />} />
