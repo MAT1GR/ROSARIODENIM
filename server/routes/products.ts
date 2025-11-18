@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import {
   getAllProducts,
   getProductById,
@@ -15,9 +17,16 @@ import {
 const router = Router();
 
 // --- NUEVO: CONFIGURACIÓN DE MULTER PARA GUARDAR ARCHIVOS ---
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'public/uploads/');
+    const uploadPath = '/home/denimros/public_html/uploads';
+    // Asegurarse de que el directorio de subida exista
+    fs.mkdirSync(uploadPath, { recursive: true });
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

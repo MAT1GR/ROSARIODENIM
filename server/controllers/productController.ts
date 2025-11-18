@@ -92,6 +92,10 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
     try {
+        console.log('--- DEBUG: updateProduct ---');
+        console.log('req.body:', JSON.stringify(req.body, null, 2));
+        console.log('req.files:', req.files);
+
         const { existingImages, ...productData } = req.body;
         const files = req.files as Express.Multer.File[];
 
@@ -113,6 +117,8 @@ export const updateProduct = async (req: Request, res: Response) => {
         productData.isNew = productData.isNew === 'true';
         productData.isBestSeller = productData.isBestSeller === 'true';
         // --- FIN DE LA CORRECCIÓN ---
+
+        console.log('Data to be saved:', JSON.stringify(productData, null, 2));
 
         const updated = await db.products.update(req.params.id, productData);
         if (updated) {

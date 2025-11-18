@@ -10,7 +10,7 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, theme = 'light' }) => {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''; 
     const imageUrl = (product.images && Array.isArray(product.images) && product.images[0])
-      ? `${apiBaseUrl}${product.images[0]}` 
+      ? product.images[0]
       : 'https://via.placeholder.com/400x500';
   
     const textColor = theme === 'dark' ? 'text-white' : 'text-black';
@@ -40,7 +40,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, theme = 'light' }) =
         {/* Segunda imagen (visible en hover) */}
         {product.images && product.images.length > 1 && (
           <img
-            src={`${apiBaseUrl}${product.images[1]}`}
+            src={product.images[1]}
             alt={`${product.name} - vista alternativa`}
             className={`absolute inset-0 w-full h-full object-cover aspect-[3/4] opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isSoldOut ? 'grayscale' : ''}`}
             loading="lazy"

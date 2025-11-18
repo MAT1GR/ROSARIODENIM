@@ -44,7 +44,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSa
     const generatePreviews = () => {
       const urls = allImages.map(img => {
         if (typeof img === 'string') {
-          return `http://localhost:3001${img}`;
+          // La imagen ya es una ruta de URL válida (ej: /uploads/image.png)
+          return img;
         }
         return URL.createObjectURL(img);
       });
