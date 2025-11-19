@@ -12,8 +12,11 @@ export interface Product {
   material: string;
   rise: string;
   fit: string;
+  waist_flat?: number;
+  hip_flat?: number;
+  length?: number;
   sizes: {
-    [key: string]: { available: boolean; stock: number; measurements: string };
+    [key: string]: { available: boolean; stock: number; };
   };
   isNew: boolean;
   isBestSeller: boolean;

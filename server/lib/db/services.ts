@@ -39,6 +39,9 @@ const parseProduct = (row: any): Product => ({
   material: row.material,
   rise: row.rise,
   fit: row.fit,
+  waist_flat: row.waist_flat,
+  hip_flat: row.hip_flat,
+  length: row.length,
   sizes: JSON.parse(row.sizes),
   isNew: Boolean(row.is_new),
   isBestSeller: Boolean(row.is_best_seller),
@@ -203,7 +206,7 @@ export const productService = {
   create(product: Omit<Product, 'id' | 'isActive'>): number {
     const db = getDB();
     const stmt = db.prepare(
-      'INSERT INTO products (name, price, images, video, category, description, material, rise, fit, sizes, is_new, is_best_seller) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO products (name, price, images, video, category, description, material, rise, fit, waist_flat, hip_flat, length, sizes, is_new, is_best_seller) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     stmt.run([
       product.name,
@@ -215,6 +218,9 @@ export const productService = {
       product.material,
       product.rise,
       product.fit,
+      product.waist_flat ?? null,
+      product.hip_flat ?? null,
+      product.length ?? null,
       JSON.stringify(product.sizes),
       Number(product.isNew),
       Number(product.isBestSeller)
@@ -228,7 +234,7 @@ export const productService = {
   update(productId: string, product: Partial<Product>): boolean {
     const db = getDB();
     db.run(
-      'UPDATE products SET name = COALESCE(?, name), price = COALESCE(?, price), images = COALESCE(?, images), video = COALESCE(?, video), category = COALESCE(?, category), description = COALESCE(?, description), material = COALESCE(?, material), rise = COALESCE(?, rise), fit = COALESCE(?, fit), sizes = COALESCE(?, sizes), is_new = COALESCE(?, is_new), is_best_seller = COALESCE(?, is_best_seller), is_active = COALESCE(?, is_active) WHERE id = ?',
+      'UPDATE products SET name = COALESCE(?, name), price = COALESCE(?, price), images = COALESCE(?, images), video = COALESCE(?, video), category = COALESCE(?, category), description = COALESCE(?, description), material = COALESCE(?, material), rise = COALESCE(?, rise), fit = COALESCE(?, fit), waist_flat = COALESCE(?, waist_flat), hip_flat = COALESCE(?, hip_flat), length = COALESCE(?, length), sizes = COALESCE(?, sizes), is_new = COALESCE(?, is_new), is_best_seller = COALESCE(?, is_best_seller), is_active = COALESCE(?, is_active) WHERE id = ?',
       [
         product.name ?? null,
         product.price ?? null,
@@ -239,6 +245,9 @@ export const productService = {
         product.material ?? null,
         product.rise ?? null,
         product.fit ?? null,
+        product.waist_flat ?? null,
+        product.hip_flat ?? null,
+        product.length ?? null,
         product.sizes ? JSON.stringify(product.sizes) : null,
         product.isNew !== undefined ? Number(product.isNew) : null,
         product.isBestSeller !== undefined ? Number(product.isBestSeller) : null,

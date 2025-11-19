@@ -1,9 +1,9 @@
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { CartItem, Product } from '../../server/types';
 
-// 1. Definimos la "forma" (interfaz) de nuestro contexto del carrito
 interface CartContextType {
   cartItems: CartItem[];
+  isAdding: boolean;
   addToCart: (product: Product, size: string, quantity?: number) => void;
   removeFromCart: (productId: string, size: string) => void;
   updateQuantity: (productId: string, size: string, quantity: number) => void;
@@ -12,14 +12,12 @@ interface CartContextType {
   getTotalItems: () => number;
 }
 
-// 2. Creamos el Contexto, especificando su tipo correctamente.
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// 3. Creamos un componente "Proveedor" que gestionará el estado del carrito
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isAdding, setIsAdding] = useState(false);
 
-  // Cargar el carrito desde localStorage solo una vez, cuando el componente se monta
   useEffect(() => {
     try {
       const savedCart = localStorage.getItem('rosario-cart');
@@ -32,23 +30,26 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  // Guardar el carrito en localStorage cada vez que el estado 'cartItems' cambie
   useEffect(() => {
     localStorage.setItem('rosario-cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
   const addToCart = (product: Product, size: string, quantity: number = 1) => {
-    setCartItems(prev => {
-      const existingItem = prev.find(item => item.product.id === product.id && item.size === size);
-      if (existingItem) {
-        return prev.map(item =>
-          item.product.id === product.id && item.size === size
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      }
-      return [...prev, { product, size, quantity }];
-    });
+    setIsAdding(true);
+    setTimeout(() => {
+      setCartItems(prev => {
+        const existingItem = prev.find(item => item.product.id === product.id && item.size === size);
+        if (existingItem) {
+          return prev.map(item =>
+            item.product.id === product.id && item.size === size
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          );
+        }
+        return [...prev, { product, size, quantity }];
+      });
+      setIsAdding(false);
+    }, 500); // Simula una pequeña demora de red
   };
 
   const removeFromCart = (productId: string, size: string) => {
@@ -83,6 +84,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const value: CartContextType = {
     cartItems,
+    isAdding,
     addToCart,
     removeFromCart,
     updateQuantity,
@@ -98,7 +100,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-// 4. Creamos el hook `useCart` que los componentes usarán para acceder al carrito
 export const useCart = () => {
   const context = useContext(CartContext);
   if (context === undefined) {

@@ -68,18 +68,21 @@ export const createProduct = async (req: Request, res: Response) => {
         const newProductData = req.body;
         const files = req.files as Express.Multer.File[];
         
+        // Data Type Conversion
+        newProductData.price = parseFloat(newProductData.price) || 0;
+        newProductData.waist_flat = newProductData.waist_flat ? parseInt(newProductData.waist_flat, 10) : null;
+        newProductData.hip_flat = newProductData.hip_flat ? parseInt(newProductData.hip_flat, 10) : null;
+        newProductData.length = newProductData.length ? parseInt(newProductData.length, 10) : null;
+        newProductData.isNew = newProductData.isNew === 'true';
+        newProductData.isBestSeller = newProductData.isBestSeller === 'true';
+        newProductData.isActive = newProductData.isActive === 'true';
+        
         if (newProductData.sizes && typeof newProductData.sizes === 'string') {
             newProductData.sizes = JSON.parse(newProductData.sizes);
         }
         
         const imagePaths = files ? files.map(file => `/uploads/${file.filename}`) : [];
         newProductData.images = imagePaths;
-
-        // --- INICIO DE LA CORRECCIÓN ---
-        // Convertimos explícitamente los valores de 'isNew' y 'isBestSeller' a booleanos.
-        newProductData.isNew = newProductData.isNew === 'true';
-        newProductData.isBestSeller = newProductData.isBestSeller === 'true';
-        // --- FIN DE LA CORRECCIÓN ---
         
         const createdProductId = await db.products.create(newProductData);
         const createdProduct = await db.products.getById(createdProductId);
@@ -92,12 +95,17 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
     try {
-        console.log('--- DEBUG: updateProduct ---');
-        console.log('req.body:', JSON.stringify(req.body, null, 2));
-        console.log('req.files:', req.files);
-
         const { existingImages, ...productData } = req.body;
         const files = req.files as Express.Multer.File[];
+
+        // Data Type Conversion
+        if (productData.price) productData.price = parseFloat(productData.price);
+        if (productData.waist_flat) productData.waist_flat = parseInt(productData.waist_flat, 10);
+        if (productData.hip_flat) productData.hip_flat = parseInt(productData.hip_flat, 10);
+        if (productData.length) productData.length = parseInt(productData.length, 10);
+        if (productData.isNew) productData.isNew = productData.isNew === 'true';
+        if (productData.isBestSeller) productData.isBestSeller = productData.isBestSeller === 'true';
+        if (productData.isActive) productData.isActive = productData.isActive === 'true';
 
         if (productData.sizes && typeof productData.sizes === 'string') {
             productData.sizes = JSON.parse(productData.sizes);
@@ -111,14 +119,6 @@ export const updateProduct = async (req: Request, res: Response) => {
         }
 
         productData.images = finalImagePaths;
-
-        // --- INICIO DE LA CORRECCIÓN ---
-        // También aplicamos la conversión en la actualización.
-        productData.isNew = productData.isNew === 'true';
-        productData.isBestSeller = productData.isBestSeller === 'true';
-        // --- FIN DE LA CORRECCIÓN ---
-
-        console.log('Data to be saved:', JSON.stringify(productData, null, 2));
 
         const updated = await db.products.update(req.params.id, productData);
         if (updated) {
