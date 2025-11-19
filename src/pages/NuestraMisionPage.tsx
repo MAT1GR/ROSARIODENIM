@@ -31,7 +31,7 @@ const NuestraMisionPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-center">
             <div className="md:col-span-2">
               <img 
-                src="https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" 
+                src="https://images.pexels.com/photos/774909/pexels-photo-774909.webp?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" 
                 alt="Foto del equipo de Rosario Denim"
                 className="rounded-lg object-cover w-full h-full shadow-md"
               />

@@ -5,7 +5,7 @@ import { Product } from "../../server/types";
 import ProductCard from "../components/ProductCard";
 import SkeletonCard from "../components/SkeletonCard";
 import WhatsAppButton from "../components/WhatsAppButton";
-import homeImage from '../assets/home.png'; // Import the image
+import homeImage from '../assets/home.webp'; // Import the image
 import CountdownTimer from "../components/CountdownTimer"; // Importado
 
 const HomePage: React.FC = () => {
@@ -128,12 +128,12 @@ const HomePage: React.FC = () => {
               <CountdownTimer /> {/* Eliminado margen inferior */}
             </div>
             {/* CORRECCIÓN: Se ajusta mt-4 a mt-2 para subir el botón */}
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-2 mt-0"> 
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-2 -mt-6"> 
               <button
                 onClick={handleScrollToLastDrop}
                 className="inline-flex items-center gap-2 bg-[#F5F5DC] text-[#2C3E50] px-4 sm:px-10 py-2 sm:py-3 rounded-sm text-sm font-bold group transition-colors"
               >
-                COMPRAR AHORA
+                COMPRAR ÚLTIMO DROP
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
@@ -195,7 +195,7 @@ const HomePage: React.FC = () => {
             <h2 className="text-3xl lg:text-4xl font-bold tracking-tight uppercase">
               Encontrá tu talle en 10 segundos
             </h2>
-            <Link to="/guia-de-talles" className="mt-6 inline-block bg-black text-white px-10 py-3 rounded-sm text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors">
+            <Link to="/tallas" className="mt-6 inline-block bg-black text-white px-10 py-3 rounded-sm text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors">
               Ver guía
             </Link>
           </div>

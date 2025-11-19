@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -14,7 +14,7 @@ import HomePage from "./pages/HomePage";
 import ShopPage from "./pages/ShopPage";
 import ProductPage from "./pages/ProductPage";
 import SizeGuidePage from "./pages/SizeGuidePage";
-import AdminPage from "./pages/AdminPage";
+const AdminPage = lazy(() => import("./pages/AdminPage")); // Lazy load AdminPage
 import CheckoutPage from "./pages/CheckoutPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import ScrollToTop from "./components/ScrollToTop";
@@ -22,15 +22,12 @@ import ScrollToTop from "./components/ScrollToTop";
 import WhatsAppButton from "./components/WhatsAppButton";
 import ReturnsPolicyPage from "./pages/ReturnsPolicyPage";
 import TransferPendingPage from "./pages/TransferPendingPage";
-import FAQPage from "./pages/FAQPage";
 import NuestraMisionPage from "./pages/NuestraMisionPage";
 import ShippingPage from "./pages/ShippingPage.tsx";
 import CartSidebar from "./components/CartSidebar";
 
-const AnimatedRoutes: React.FC = () => {
+const AnimatedRoutes: React.FC<{isHomePage: boolean, paddingTop: string}> = ({isHomePage, paddingTop}) => {
   const location = useLocation();
-  const isHomePage = location.pathname === "/";
-  const paddingTop = isHomePage ? '' : 'pt-[80px]';
 
   return (
     <main key={location.pathname} className={`flex-1 fade-in-up ${paddingTop}`}>
@@ -40,39 +37,55 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/producto/:id" element={<ProductPage />} />
         <Route path="/shipping" element={<ShippingPage />} />
         <Route path="/tallas" element={<SizeGuidePage />} />
-        <Route path="/admin" element={<AdminPage />} />
+        {/* Wrap AdminPage with Suspense */}
+        <Route path="/admin" element={
+          <Suspense fallback={<div>Cargando...</div>}> {/* Add a fallback UI */}
+            <AdminPage />
+          </Suspense>
+        } />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/pago-exitoso" element={<PaymentSuccessPage />} />
         <Route path="/pedido-pendiente/:id" element={<TransferPendingPage />} />
         <Route path="/cambios-y-devoluciones" element={<ReturnsPolicyPage />} />
-        <Route path="/preguntas-frecuentes" element={<FAQPage />} />
         <Route path="/nuestra-mision" element={<NuestraMisionPage />} />
       </Routes>
     </main>
   );
 };
 
+// New MainLayout component to encapsulate the main app structure
+const MainLayout: React.FC = () => {
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+  const paddingTop = isHomePage ? '' : 'pt-[80px]';
+  const [isCartOpen, setIsCartOpen] = useState(false); // isCartOpen state moved here
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header onCartClick={() => setIsCartOpen(true)} />
+      <AnimatedRoutes isHomePage={isHomePage} paddingTop={paddingTop} />
+      <Footer />
+      <CartSidebar
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+      />
+      {isHomePage && <WhatsAppButton message="¡Hola! ¿Podrían ayudarme con una consulta?" />}
+    </div>
+  );
+};
+
+
 function App() {
   const auth = useAuthProvider();
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  // location, isHomePage, paddingTop, isCartOpen state moved to MainLayout
 
-  
 
   return (
     <AuthContext.Provider value={auth}>
       <CartProvider>
         <Router>
           <ScrollToTop />
-          <div className="min-h-screen flex flex-col">
-
-            <Header onCartClick={() => setIsCartOpen(true)} />
-            <AnimatedRoutes />
-            <Footer />
-            <CartSidebar
-              isOpen={isCartOpen}
-              onClose={() => setIsCartOpen(false)}
-            />
-          </div>
+          <MainLayout /> {/* Render MainLayout here */}
         </Router>
       </CartProvider>
     </AuthContext.Provider>

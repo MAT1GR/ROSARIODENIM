@@ -36,9 +36,8 @@ const Header: React.FC<HeaderProps> = ({ onCartClick }) => {
 
   const navLinks = [
     { href: "/tienda", label: "Tienda" },
-    { href: "/nuestra-mision", label: "Nuestra Misión" },
-    { href: "/preguntas-frecuentes", label: "Preguntas" },
     { href: "/tallas", label: "Guía de Talles" },
+    { href: "/cambios-y-devoluciones", label: "Cambios y Devoluciones" },
   ];
 
   const headerClasses = `
@@ -130,7 +129,7 @@ const Header: React.FC<HeaderProps> = ({ onCartClick }) => {
         onClick={() => setIsMenuOpen(false)}
       >
         <div
-          className={`absolute top-0 right-0 h-full w-3/4 max-w-xs bg-[#F5F5DC] shadow-xl p-6 transition-transform duration-300 ${
+          className={`absolute top-0 right-0 h-full w-3/4 max-w-xs bg-white shadow-xl p-6 transition-transform duration-300 ${
             isMenuOpen ? "translate-x-0" : "translate-x-full"
           }`}
           onClick={(e) => e.stopPropagation()}

@@ -3,20 +3,21 @@ import { Link } from "react-router-dom";
 import { Instagram, Facebook, Twitter } from "lucide-react";
 
 const Footer: React.FC = () => {
-  const navLinks = [
-    { href: "/tienda", label: "Tienda" },
+  const helpLinks = [
+    { href: "/shipping", label: "Envíos y Tiempos" },
+    { href: "/cambios-y-devoluciones", label: "Cambios y Devoluciones" },
+  ];
+
+  const legalLinks = [
     { href: "/nuestra-mision", label: "Nuestra Misión" },
-    { href: "/preguntas-frecuentes", label: "Preguntas Frecuentes" },
-    { href: "/tallas", label: "Guía de Talles" },
-    { href: "/politica-de-devoluciones", label: "Política de Devoluciones" },
   ];
 
   return (
     <footer className="bg-black text-white">
       <div className="container mx-auto max-w-7xl px-4 py-16">
-        <div className="grid grid-cols-1">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Logo y Descripción */}
-          <div className="md:col-span-1">
+          <div className="col-span-2 md:col-span-1">
             <Link
               to="/"
               className="font-poppins text-xl font-bold tracking-widest uppercase"
@@ -28,10 +29,49 @@ const Footer: React.FC = () => {
               Redefiniendo el denim con un calce perfecto y un estilo que
               perdura.
             </p>
-            <p className="mt-2 text-sm text-gray-300 font-semibold">
-              Stock limitado y renovado cada semana.
-            </p>
           </div>
+
+          {/* Ayuda */}
+          <div>
+            <h3 className="font-semibold tracking-wider uppercase text-gray-300">Ayuda</h3>
+            <ul className="mt-4 space-y-2">
+              {helpLinks.map((link) => (
+                <li key={link.href}>
+                  <Link to={link.href} className="text-gray-400 hover:text-white transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h3 className="font-semibold tracking-wider uppercase text-gray-300">Legal</h3>
+            <ul className="mt-4 space-y-2">
+              {legalLinks.map((link) => (
+                <li key={link.href}>
+                  <Link to={link.href} className="text-gray-400 hover:text-white transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Social */}
+          <div>
+            <h3 className="font-semibold tracking-wider uppercase text-gray-300">Social</h3>
+            <div className="flex mt-4 space-x-4">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Instagram size={20} /></a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Facebook size={20} /></a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Twitter size={20} /></a>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-16 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
+          <p>&copy; {new Date().getFullYear()} DenimRosario. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>
