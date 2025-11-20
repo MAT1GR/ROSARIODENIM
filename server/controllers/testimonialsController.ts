@@ -10,17 +10,17 @@ const testimonials = [
   },
   {
     id: 2,
-    customerName: '@celia24cmc',
+    customerName: '@alaniisleo',
     content: 'Gracias bella! Me encanto el jean blanco 😍',
     rating: 5,
     productName: ""
   },
   {
     id: 3,
-    customerName: 'Leimai V.',
-    productName: 'Jean Skinny "eclipse"',
+    customerName: '@_leimai',
+    content: 'Es el mejor jean que tengo, MUCHAS GRACIASSS',
     rating: 5,
-    content: '¡Increíble! El mejor jean que he tenido. Se adapta perfecto y el diseño es único.',
+    productName: ""
   },
 ];
 

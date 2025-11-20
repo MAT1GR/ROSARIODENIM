@@ -63,9 +63,7 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="font-semibold tracking-wider uppercase text-gray-300">Social</h3>
             <div className="flex mt-4 space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Instagram size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Facebook size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Twitter size={20} /></a>
+              <a href="https://www.instagram.com/rosariodenim/" className="text-gray-400 hover:text-white transition-colors"><Instagram size={20} /></a>
             </div>
           </div>
         </div>

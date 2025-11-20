@@ -184,21 +184,21 @@ const HomePage: React.FC = () => {
                 <Sparkle className="w-10 h-10 mb-4 text-gray-800" />
                 <h3 className="text-lg font-semibold uppercase tracking-wider">Un solo jean por modelo</h3>
                 <p className="mt-2 text-sm text-gray-600">
-                  Cada prenda es única y no repetimos stock. <span className="font-bold">Nunca vas a ver otra igual.</span>
+                  Cada prenda es única y no repetimos stock.<br /> <span className="font-bold">Nunca vas a ver otra igual.</span>
                 </p>
               </div>
               <div className="flex flex-col items-center">
                 <Box className="w-10 h-10 mb-4 text-gray-800" />
                 <h3 className="text-lg font-semibold uppercase tracking-wider">Drops limitados</h3>
                 <p className="mt-2 text-sm text-gray-600">
-                  Colecciones pequeñas, seleccionadas a mano en Rosario. <span className="font-bold">Si te gusta, no lo dejes pasar.</span>
+                  Colecciones pequeñas, seleccionadas a mano.<br /> <span className="font-bold">Si te gusta, no lo dejes pasar.</span>
                 </p>
               </div>
               <div className="flex flex-col items-center">
                 <Eye className="w-10 h-10 mb-4 text-gray-800" />
-                <h3 className="text-lg font-semibold uppercase tracking-wider">Curaduría real, no catálogo</h3>
-                <p className="mt-2 text-gray-600">
-                  Priorizamos calidad, textura y calce, sin seguir modas rápidas.
+                <h3 className="text-lg font-semibold uppercase tracking-wider">CALIDAD ANTES QUE TENDENCIA</h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  Priorizamos calidad, textura y calce.<br /> <span className="font-bold">Sin seguir modas rápidas.</span>
                 </p>
               </div>
             </div>

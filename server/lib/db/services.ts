@@ -193,7 +193,7 @@ export const productService = {
 
   getNewest(limit: number): Product[] {
     const db = getDB();
-    const rows = toObjects(db.exec('SELECT * FROM products WHERE is_new = 1 AND is_active = 1 ORDER BY created_at DESC LIMIT ?', [limit]));
+    const rows = toObjects(db.exec('SELECT * FROM products WHERE is_new = 1 AND is_active = 1 ORDER BY id DESC LIMIT ?', [limit]));
     return rows.map(parseProduct);
   },
 
