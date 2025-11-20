@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkle, Box, Eye } from "lucide-react";
-import { Product } from "../../server/types";
+import { Product, Testimonial } from "../../server/types";
+import TestimonialCard from "../components/TestimonialCard";
 import ProductCard from "../components/ProductCard";
 import SkeletonCard from "../components/SkeletonCard";
 import WhatsAppButton from "../components/WhatsAppButton";
@@ -13,40 +14,12 @@ const HomePage: React.FC = () => {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
-  const [isSubscribing, setIsSubscribing] = useState(false);
-  const [subscribeMessage, setSubscribeMessage] = useState('');
-  const [showEmailInput, setShowEmailInput] = useState(false);
   const [showWhatsAppButton, setShowWhatsAppButton] = useState(false);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
   const lastDropSectionRef = useRef<HTMLElement>(null);
 
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      setSubscribeMessage('Por favor, ingresa tu email.');
-      return;
-    }
-    setIsSubscribing(true);
-    setSubscribeMessage('');
 
-    try {
-      const response = await fetch('/api/notifications/drop', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await response.json();
-      setSubscribeMessage(data.message);
-      if (response.ok) {
-        setEmail('');
-      }
-    } catch (err) {
-      setSubscribeMessage('Ocurrió un error. Intenta de nuevo.');
-    } finally {
-      setIsSubscribing(false);
-    }
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,6 +48,22 @@ const HomePage: React.FC = () => {
     };
 
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const response = await fetch("/api/testimonials");
+        if (!response.ok) {
+          throw new Error('Failed to fetch testimonials');
+        }
+        const data = await response.json();
+        setTestimonials(data);
+      } catch (error) {
+        console.error("Error fetching testimonials:", error);
+      }
+    };
+    fetchTestimonials();
   }, []);
 
   useEffect(() => {
@@ -117,15 +106,17 @@ const HomePage: React.FC = () => {
       <div className="bg-gradient-to-b from-[#0d0d0d] to-[#1a1a1a] text-white">
                     {/* Hero Section */}
                     <section
-                      className="min-h-[70vh] relative flex flex-col items-center justify-center text-center px-4 py-20 lg:py-32 bg-cover bg-center" 
+                      className="min-h-[70vh] lg:min-h-screen relative flex flex-col items-center justify-center text-center px-4 py-20 lg:py-32 bg-cover bg-center" 
                       style={{ backgroundImage: `url(${homeImage})` }}
                     >
                       <div className="absolute top-0 left-0 w-full h-full bg-[rgba(0,0,0,0.45)]" />
                       <div className="z-10 w-full px-4">
             <div className="countdown-section">
               {/* Ajuste de margen para acercar */}
-              <h3 className="text-xl font-medium tracking-wide mb-2">PRÓXIMO DROP EN:</h3> 
-              <CountdownTimer /> {/* Eliminado margen inferior */}
+              <h3 className="text-xl font-medium tracking-wide">PRÓXIMO DROP EN:</h3> 
+              <div className="mt-4 mx-auto">
+                <CountdownTimer /> 
+              </div>
             </div>
             {/* CORRECCIÓN: Se ajusta mt-4 a mt-2 para subir el botón */}
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-2 -mt-6"> 
@@ -138,28 +129,7 @@ const HomePage: React.FC = () => {
               </button>
             </div>
 
-            {showEmailInput && (
-              <form onSubmit={handleSubscribe} className="mt-6 sm:mt-4 flex flex-col items-center gap-2 max-w-sm mx-auto w-full">
-                <div className="flex w-full">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Tu dirección de email"
-                    className="w-full px-4 py-2 rounded-l-sm border-0 text-gray-800 focus:ring-2 focus:ring-white"
-                    required
-                  />
-                  <button
-                    type="submit"
-                    disabled={isSubscribing}
-                    className="bg-white text-gray-800 px-6 py-2 rounded-r-sm font-bold hover:bg-gray-200 disabled:opacity-50"
-                  >
-                    {isSubscribing ? 'Enviando...' : 'Notificarme'}
-                  </button>
-                </div>
-                {subscribeMessage && <p className="text-sm mt-2 h-4">{subscribeMessage}</p>}
-              </form>
-            )}
+
           </div>
           {/* Solo se deja el indicador de flecha */}
           <p className="absolute bottom-8 left-1/2 -translate-x-1/2 text-base text-white animate-pulse-slow">
@@ -175,8 +145,8 @@ const HomePage: React.FC = () => {
               <h2 className="text-3xl lg:text-4xl font-medium tracking-[1px] uppercase">
                 ÚLTIMO DROP
               </h2>
-              <p className="mt-2 text-sm text-gray-700">
-                Prendas únicas. No repetimos stock. Lo que ves es lo último.
+              <p className="mt-2 text-sm text-red-500">
+                Última unidad de cada prenda
               </p>
             </div>
             {loading ? renderSkeletons() : error ? <p className="text-center text-red-500">{error}</p> : newProducts.length > 0 ? (
@@ -231,6 +201,22 @@ const HomePage: React.FC = () => {
                   Priorizamos calidad, textura y calce, sin seguir modas rápidas.
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section className="py-16 lg:py-24 bg-neutral-100 text-black">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl lg:text-4xl font-bold tracking-tight uppercase">
+                Lo que dicen nuestras clientas
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {testimonials.map((testimonial) => (
+                <TestimonialCard key={testimonial.id} testimonial={testimonial} />
+              ))}
             </div>
           </div>
         </section>
