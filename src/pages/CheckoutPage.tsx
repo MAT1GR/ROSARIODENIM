@@ -101,7 +101,7 @@ const CheckoutPage: React.FC = () => {
     setError(null);
 
     const finalTotal =
-      paymentMethod === "transferencia" ? totalWithDiscount : total;
+      paymentMethod === "mercado-pago" ? totalWithDiscount : total;
 
     if (paymentMethod === "mercado-pago") {
       try {
@@ -126,7 +126,7 @@ const CheckoutPage: React.FC = () => {
         setError(err.message);
         setIsLoading(false); // Asegurarse de detener la carga en caso de error
       }
-    } else if (paymentMethod === "transferencia") {
+    } else if (paymentMethod === "mercado-pago") {
       try {
         const response = await fetch("/api/payments/create-transfer-order", {
           method: "POST",
@@ -174,7 +174,7 @@ const CheckoutPage: React.FC = () => {
     formData.phone &&
     selectedShipping;
   const displayedTotal =
-    paymentMethod === "transferencia" ? totalWithDiscount : total;
+    paymentMethod === "mercado-pago" ? totalWithDiscount : total;
 
   return (
     <div className="min-h-screen bg-blanco-hueso">
@@ -254,7 +254,7 @@ const CheckoutPage: React.FC = () => {
                           </span>
                         </div>
                         <span className="font-medium text-sm">
-                          ${option.cost.toLocaleString("es-AR")}
+                          ${option.cost.toLocaleString("es-AR").replace(/\./g, '')}
                         </span>
                       </label>
                     ))}
@@ -293,31 +293,6 @@ const CheckoutPage: React.FC = () => {
                   required
                 />
               </fieldset>
-
-              <fieldset>
-                <legend className="text-xl font-bold mb-4 text-gris-oscuro">
-                  3. MÉTODO DE PAGO
-                </legend>
-                <div className="space-y-4">
-                  <PaymentOption
-                    id="mercado-pago"
-                    title="Mercado Pago"
-                    description="Tarjetas de crédito, débito y dinero en cuenta."
-                    icon={<img src="https://logowik.com/content/uploads/images/mercado-pago1721074123.logowik.com.webp" alt="Mercado Pago" className="h-8 rounded-md" />}
-                    selected={paymentMethod}
-                    onSelect={setPaymentMethod}
-                  />
-                  <PaymentOption
-                    id="transferencia"
-                    title="Transferencia Bancaria"
-                    description="Importante: tenés 60 min. para enviar el comprobante."
-                    icon={<Banknote />}
-                    selected={paymentMethod}
-                    onSelect={setPaymentMethod}
-                    discount="-10% OFF"
-                  />
-                </div>
-              </fieldset>
             </form>
           </div>
 
@@ -337,7 +312,7 @@ const CheckoutPage: React.FC = () => {
                 <div className="flex justify-between items-center text-gris-oscuro border-t border-arena pt-4">
                   <span>Subtotal</span>
                   <span className="font-medium">
-                    ${subtotal.toLocaleString("es-AR")}
+                    ${subtotal.toLocaleString("es-AR").replace(/\./g, '')}
                   </span>
                 </div>
 
@@ -345,16 +320,16 @@ const CheckoutPage: React.FC = () => {
                   <span>Envío</span>
                   <span className="font-medium">
                     {selectedShipping
-                      ? `$${selectedShipping.cost.toLocaleString("es-AR")}`
+                      ? `$${selectedShipping.cost.toLocaleString("es-AR").replace(/\./g, '')}`
                       : "A calcular"}
                   </span>
                 </div>
 
-                {paymentMethod === "transferencia" && selectedShipping && (
+                {paymentMethod === "mercado-pago" && selectedShipping && (
                   <div className="flex justify-between items-center text-green-600">
-                    <span>Descuento</span>
+                    <span>Descuento MP (-10%)</span>
                     <span className="font-medium">
-                      - ${(total * 0.1).toLocaleString("es-AR")}
+                      - ${(total * 0.1).toLocaleString("es-AR").replace(/\./g, '')}
                     </span>
                   </div>
                 )}
@@ -362,8 +337,31 @@ const CheckoutPage: React.FC = () => {
                 <div className="flex justify-between items-center text-xl font-bold border-t border-arena pt-4">
                   <span className="text-gris-oscuro">Total</span>
                   <span className="text-2xl text-black">
-                    ${displayedTotal.toLocaleString("es-AR")}
+                    ${displayedTotal.toLocaleString("es-AR").replace(/\./g, '')}
                   </span>
+                </div>
+
+                <div className="border-t border-arena pt-4 mb-6"> {/* Separator before payment method */}
+                  <h3 className="text-lg font-bold mb-3 text-gris-oscuro">Método de Pago</h3>
+                  <div className="space-y-4">
+                    <PaymentOption
+                      id="mercado-pago"
+                      title="Mercado Pago"
+                      description="Tarjetas de crédito, débito y dinero en cuenta."
+                      icon={<img src="https://logowik.com/content/uploads/images/mercado-pago1721074123.logowik.com.webp" alt="Mercado Pago" className="h-8 rounded-md" />}
+                      selected={paymentMethod}
+                      onSelect={setPaymentMethod}
+                      discount="-10% OFF"
+                    />
+                    <PaymentOption
+                      id="transferencia"
+                      title="Transferencia Bancaria"
+                      description="Importante: tenés 20 min. para enviar el comprobante."
+                      icon={<Banknote />}
+                      selected={paymentMethod}
+                      onSelect={setPaymentMethod}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -372,11 +370,6 @@ const CheckoutPage: React.FC = () => {
                   <strong>Error:</strong> {error}
                 </div>
               )}
-
-              <div className="flex items-center justify-center mt-6 text-sm text-gray-500">
-                <Lock size={16} className="mr-2" />
-                <span>Sitio seguro</span>
-              </div>
 
               <button
                 onClick={handleFinalizeOrder}
@@ -389,6 +382,11 @@ const CheckoutPage: React.FC = () => {
                   ? "Ir a Pagar"
                   : "Finalizar Pedido"}
               </button>
+
+              <div className="flex items-center justify-center mt-4 text-sm text-gray-500">
+                <Lock size={16} className="mr-2" />
+                <span>Sitio seguro</span>
+              </div>
             </div>
           </div>
         </div>
@@ -466,7 +464,7 @@ const CartItem = ({ item }: { item: CartItemType }) => (
       </div>
     </div>
     <span className="font-semibold text-gris-oscuro">
-      ${(item.product.price * item.quantity).toLocaleString("es-AR")}
+      ${(item.product.price * item.quantity).toLocaleString("es-AR").replace(/\./g, '')}
     </span>
   </div>
 );

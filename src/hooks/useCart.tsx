@@ -36,20 +36,17 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addToCart = (product: Product, size: string, quantity: number = 1) => {
     setIsAdding(true);
-    setTimeout(() => {
-      setCartItems(prev => {
-        const existingItem = prev.find(item => item.product.id === product.id && item.size === size);
-        if (existingItem) {
-          return prev.map(item =>
-            item.product.id === product.id && item.size === size
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          );
-        }
-        return [...prev, { product, size, quantity }];
-      });
-      setIsAdding(false);
-    }, 500); // Simula una pequeña demora de red
+    setCartItems(prev => {
+      const existingItem = prev.find(item => item.product.id === product.id && item.size === size);
+      
+      // If item is already in cart for a unique product, do nothing.
+      if (existingItem) {
+        return prev;
+      }
+
+      return [...prev, { product, size, quantity }];
+    });
+    setTimeout(() => setIsAdding(false), 500); // Keep for visual feedback, but state is updated instantly
   };
 
   const removeFromCart = (productId: string, size: string) => {

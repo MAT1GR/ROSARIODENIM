@@ -83,34 +83,8 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
                       </button>
                     </div>
                     <div className="flex justify-between items-center mt-4">
-                      <div className="flex items-center border rounded-lg">
-                        <button
-                          onClick={() =>
-                            updateQuantity(
-                              item.product.id,
-                              item.size,
-                              item.quantity - 1
-                            )
-                          }
-                          className="p-2 text-gray-600 hover:text-brand-primary transition-colors"
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <span className="px-3 py-1 border-x text-sm">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() =>
-                            updateQuantity(
-                              item.product.id,
-                              item.size,
-                              item.quantity + 1
-                            )
-                          }
-                          className="p-2 text-gray-600 hover:text-brand-primary transition-colors"
-                        >
-                          <Plus size={14} />
-                        </button>
+                      <div className="flex items-center">
+                        <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
                       </div>
                       <p className="font-bold text-lg">
                         $

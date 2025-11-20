@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkle, Box, Eye } from "lucide-react";
+import { ArrowRight, Sparkle, Box, Eye, Target } from "lucide-react";
 import { Product, Testimonial } from "../../server/types";
 import TestimonialCard from "../components/TestimonialCard";
 import ProductCard from "../components/ProductCard";
@@ -159,18 +159,6 @@ const HomePage: React.FC = () => {
           </div>
         </section>
 
-        {/* Size Guide Section */}
-        <section className="py-16 lg:py-24 bg-neutral-100 text-black">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight uppercase">
-              Encontrá tu talle en 10 segundos
-            </h2>
-            <Link to="/tallas" className="mt-6 inline-block bg-black text-white px-10 py-3 rounded-sm text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors">
-              Ver guía
-            </Link>
-          </div>
-        </section>
-
         {/* Features Section */}
         <section className="py-16 lg:py-24 bg-white text-black">
           <div className="container mx-auto px-4">
@@ -221,44 +209,33 @@ const HomePage: React.FC = () => {
           </div>
         </section>
 
-        {/* All Products Section */}
-        <section className="py-16 lg:py-24 bg-neutral-900">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl lg:text-4xl font-bold tracking-tight uppercase">
-                Todos los productos
-              </h2>
-              <Link to="/tienda" className="mt-2 text-lg text-gray-400 hover:underline">
-                Ver colección completa
-              </Link>
-            </div>
-            {/*
-            {loading ? renderSkeletons() : error ? <p className="text-center text-red-500">{error}</p> : allProducts.length > 0 ? (
-               <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
-                  {allProducts.slice(0, 8).map(p => <ProductCard product={p} key={p.id} theme="dark" />)}
-               </div>
-            ) : (
-              <p className="text-center text-gray-500">No se encontraron productos.</p>
-            )}
-            */}
-          </div>
-        </section>
-        
-         {/* Social Media Section */}
-        <section className="py-16 lg:py-24 text-center">
-          <h2 className="text-3xl font-bold tracking-tight uppercase">@ROSARIODENIM</h2>
-          <p className="mt-2 text-lg text-gray-400">Seguinos en Instagram</p>
-          {/* Placeholder for Instagram Feed */}
-          <div className="mt-8 container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-2">
-              <div className="aspect-square bg-neutral-800"></div>
-              <div className="aspect-square bg-neutral-800"></div>
-              <div className="aspect-square bg-neutral-800"></div>
-              <div className="aspect-square bg-neutral-800"></div>
+        {/* Nuestra Mision Section */}
+        <section className="py-16 lg:py-24 bg-white text-black">
+          <div className="container mx-auto px-4 text-center">
+            <Target className="mx-auto text-gray-800 mb-4" size={40} />
+            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight uppercase">
+              Nuestra Misión
+            </h2>
+            <p className="mt-4 max-w-2xl mx-auto text-gray-600 text-sm">
+              Comprar jeans online no tendría que ser una lotería. Medimos cada prenda a mano para que recibas en tu casa exactamente el talle que esperas.<br/> <span className="font-bold">Tu calce perfecto, garantizado.</span>
+            </p>
           </div>
         </section>
 
-      </div>
-    </>
+        {/* Size Guide Section */}
+        <section className="py-16 lg:py-24 bg-neutral-100 text-black">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight uppercase">
+              Encontrá tu talle en 10 segundos
+            </h2>
+            <Link to="/tallas" className="mt-6 inline-block bg-black text-white px-10 py-3 rounded-sm text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors">
+              Ver guía
+            </Link>
+          </div>
+        </section>
+
+                
+              </div>    </>
   );
 };
 

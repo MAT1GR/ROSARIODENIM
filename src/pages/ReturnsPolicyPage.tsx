@@ -9,13 +9,6 @@ const ReturnsPolicyPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div ref={contentRef} className="container mx-auto max-w-4xl px-4 scroll-animate">
-        <Link
-          to="/tienda"
-          className="inline-flex items-center text-gray-600 hover:text-gray-800 mb-8 transition-colors"
-        >
-          <ArrowLeft className="mr-2" size={20} />
-          Volver a la tienda
-        </Link>
 
         <div className="bg-white rounded-lg shadow-sm p-8 md:p-12">
           <div className="text-center mb-12">
